@@ -1,5 +1,31 @@
 @import "tailwindcss";
 
+/* 폰트 파일 등록 */
+@font-face {
+  font-family: "Pretendard";
+  src: url("/fonts/Pretendard-SemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Pretendard";
+  src: url("/fonts/Pretendard-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Pretendard";
+  src: url("/fonts/Pretendard-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* 색상 테마 설정 */
 @theme {
   --color-primary: #4e83ff;
   --color-primary-light: #9dbaff;
@@ -11,16 +37,134 @@
   --color-background: #f8f9fd;
 }
 
-@layer utilities {
-  .no-scrollbar {
-    /* IE and Edge */
-    -ms-overflow-style: none;
-    /* Firefox */
-    scrollbar-width: none;
+/* 전역 스타일 */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    font-family: "Pretendard", sans-serif !important;
   }
 
+  html,
+  body {
+    @apply antialiased;
+    font-family: "Pretendard", sans-serif;
+  }
+}
+
+@layer utilities {
+  /* 스크롤바 숨김 */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
   .no-scrollbar::-webkit-scrollbar {
-    /* Chrome, Safari and Opera */
     display: none;
+  }
+
+  /* [Head] 영역 */
+  .text-head1_sb_24 {
+    font-size: 24px;
+    line-height: 1.4;
+    letter-spacing: -0.04em;
+    font-weight: 600;
+  }
+  .text-head2_m_24 {
+    font-size: 24px;
+    line-height: 1.4;
+    letter-spacing: -0.04em;
+    font-weight: 500;
+  }
+
+  /* [Title] 영역 */
+  .text-title1_sb_20 {
+    font-size: 20px;
+    line-height: 1.4;
+    letter-spacing: -0.04em;
+    font-weight: 600;
+  }
+  .text-title2_m_20 {
+    font-size: 20px;
+    line-height: 1.4;
+    letter-spacing: -0.04em;
+    font-weight: 500;
+  }
+
+  /* [Sub] 영역 */
+  .text-sub1_sb_18 {
+    font-size: 18px;
+    line-height: 1.4;
+    letter-spacing: -0.04em;
+    font-weight: 600;
+  }
+  .text-sub2_m_18 {
+    font-size: 18px;
+    line-height: 1.4;
+    letter-spacing: -0.04em;
+    font-weight: 500;
+  }
+  .text-sub3_sb_16 {
+    font-size: 16px;
+    line-height: 1.4;
+    letter-spacing: -0.04em;
+    font-weight: 600;
+  }
+  .text-sub4_sb_14 {
+    font-size: 14px;
+    line-height: 1.4;
+    letter-spacing: -0.04em;
+    font-weight: 600;
+  }
+
+  /* [Body] 영역 */
+  .text-body1_m_16 {
+    font-size: 16px;
+    line-height: 1.5;
+    letter-spacing: -0.04em;
+    font-weight: 500;
+  }
+  .text-body2_m_14 {
+    font-size: 14px;
+    line-height: 1.5;
+    letter-spacing: -0.04em;
+    font-weight: 500;
+  }
+  .text-body3_r_16 {
+    font-size: 16px;
+    line-height: 1.5;
+    letter-spacing: -0.04em;
+    font-weight: 400;
+  }
+  .text-body4_r_14 {
+    font-size: 14px;
+    line-height: 1.5;
+    letter-spacing: -0.04em;
+    font-weight: 400;
+  }
+
+  /* [Caption] 영역 */
+  .text-caption1_m_13 {
+    font-size: 13px;
+    line-height: 1.4;
+    letter-spacing: -0.04em;
+    font-weight: 500;
+  }
+  .text-caption2_m_12 {
+    font-size: 12px;
+    line-height: 1.4;
+    letter-spacing: -0.04em;
+    font-weight: 500;
+  }
+  .text-caption3_r_13 {
+    font-size: 13px;
+    line-height: 1.4;
+    letter-spacing: -0.04em;
+    font-weight: 400;
+  }
+  .text-caption4_r_12 {
+    font-size: 12px;
+    line-height: 1.4;
+    letter-spacing: -0.04em;
+    font-weight: 400;
   }
 }
