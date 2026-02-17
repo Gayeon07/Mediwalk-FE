@@ -21,15 +21,15 @@ const DisposalComplete = () => {
       </div>
       <div className="flex w-full flex-col gap-3.5 mt-40">
         <div className="flex justify-between px-4 py-3 bg-primary-extralight border border-primary-light rounded-xl items-center">
-          <div className="text-primary flex gap-1.5 text-sub1_sb_18 items-center">
-            <FaCircleCheck className="size-5" />
+          <div className="text-primary flex gap-1.5 text-sub3_sb_16 items-center">
+            <FaCircleCheck className="size-4" />
             3000원 적립 완료
           </div>
-          <div className="text-body2_m_14 text-cool-neutral-30">
+          <div className="text-caption1-m-13 text-cool-neutral-30">
             누적 잔액 50850원
           </div>
         </div>
-        <div className="flex flex-col p-4 bg-common-white shadow-md rounded-xl gap-4.5">
+        <div className="flex flex-col p-4 bg-common-white shadow-md rounded-xl gap-4.5 text-body3_r_16">
           <div className="flex justify-between">
             <div>• 오늘의 운동</div>
             <div>350m 산책 완료</div>
@@ -40,7 +40,7 @@ const DisposalComplete = () => {
           </div>
         </div>
       </div>
-      <div className="flex gap-2 w-full text-sub1_sb_18 mt-15">
+      <div className="flex gap-2 w-full text-sub3_sb_16 mt-15">
         <button
           onClick={returnHome}
           className="flex-1 py-4 bg-common-white text-primary border border-primary rounded-xl"
