@@ -29,7 +29,7 @@ const DisposalComplete = () => {
             누적 잔액 50850원
           </div>
         </div>
-        <div className="flex flex-col p-4 bg-common-white shadow-md rounded-xl gap-4.5 text-body3_r_16">
+        <div className="flex flex-col p-4 bg-common-white shadow-md shadow-[#4a4e56]/4 rounded-xl gap-4.5 text-body3_r_16">
           <div className="flex justify-between">
             <div>• 오늘의 운동</div>
             <div>350m 산책 완료</div>
