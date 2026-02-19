@@ -5,6 +5,7 @@ import BinCard from "./BinCard";
 import { useEffect, useState } from "react";
 import api from "../../api/axios";
 import { useCurrentLocation } from "../../hooks/useCurrentLocation";
+import { useNavigate } from "react-router-dom";
 
 interface UserData {
   id: number;
@@ -54,6 +55,8 @@ const Home = () => {
   const [bins, setBins] = useState<BinLocationData[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const navigate = useNavigate();
+
   // API 호출 - 화면이 켜지면 실행
   useEffect(() => {
     if (isLocating || !myLocation) return;
@@ -88,7 +91,7 @@ const Home = () => {
     <>
       <div className="flex flex-col gap-3">
         {/* 헤더 */}
-        <header className="flex h-16 justify-between items-center px-6">
+        <header className="sticky top-0 z-50 bg-background flex h-16 justify-between items-center px-6">
           <div className="text-2xl font-bold">mediwalk</div>
           <div className="cursor-pointer">
             <BiBell className="size-6" />
@@ -109,7 +112,7 @@ const Home = () => {
             </div>
             <div className="flex flex-col items-end gap-0.5">
               <div className="text-lg font-bold text-primary">
-                {user?.totalAccumulatedReward.toLocaleString()}원
+                {user?.totalAccumulatedReward.toLocaleString()} 원
               </div>
               <div className="text-xs font-semibold text-gray-500">
                 지난 달 대비 +{user?.rewardIncreaseRateComparedToLastMonth || 0}
@@ -133,7 +136,10 @@ const Home = () => {
         <section className="flex flex-col p-6 gap-3">
           <div className="flex justify-between">
             <div className="font-semibold text-xl">근처 폐의약품 수거함</div>
-            <div className="flex items-center gap-0.5 text-sm text-gray-500 cursor-pointer">
+            <div
+              onClick={() => navigate("/walk")}
+              className="flex items-center gap-0.5 text-sm text-gray-500 cursor-pointer"
+            >
               전체보기 <FaAngleRight />
             </div>
           </div>
@@ -149,6 +155,7 @@ const Home = () => {
                     distance: 500,
                     reward: bin.baseRewardAmount,
                   }}
+                  onClick={() => navigate(`/walk/${bin.id}`)}
                 />
               );
             })}
