@@ -10,6 +10,7 @@ interface UserData {
   id: number;
   name: string;
   totalAccumulatedReward: number;
+  rewardIncreaseRateComparedToLastMonth: number;
 }
 
 export interface MissionInfo {
@@ -111,7 +112,8 @@ const Home = () => {
                 {user?.totalAccumulatedReward.toLocaleString()}원
               </div>
               <div className="text-xs font-semibold text-gray-500">
-                지난 달 대비 +24%
+                지난 달 대비 +{user?.rewardIncreaseRateComparedToLastMonth || 0}
+                %
               </div>
             </div>
           </div>
