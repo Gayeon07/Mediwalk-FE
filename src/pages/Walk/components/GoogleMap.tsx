@@ -46,7 +46,7 @@ export default function MyGoogleMap({
   useEffect(() => {
     if (!navigator.geolocation) return;
 
-    // watchPosition은 위치가 변할 때마다 콜백을 실행합니다.
+    // watchPosition은 위치가 변할 때마다 콜백을 실행
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
         const newPos = {
