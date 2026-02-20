@@ -20,8 +20,11 @@ export interface MissionsData {
   missionId: number;
   collectionLocationId: number;
   status: string;
+  earnedReward: number;
   missionTitle: string;
   missionDescription: string;
+  distanceMeters: number;
+  walkingDistanceMeters: number;
 }
 
 interface BinLocationData {
