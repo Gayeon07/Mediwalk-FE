@@ -49,6 +49,10 @@ export default function MyGoogleMap({
   // 지도 인스턴스와 현재 위치를 저장할 상태
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [currentPosition, setCurrentPosition] = useState(myLocation);
+
+  // 처음 지도 렌더링 시 쓸 '고정된' 초기 위치
+  const [initialCenter] = useState(myLocation);
+
   const [isTracking, setIsTracking] = useState(true); // 지도 중심이 나를 따라다닐지 여부
 
   // 해독된 경로(위도/경도 배열)를 저장할 상태
@@ -162,7 +166,7 @@ export default function MyGoogleMap({
     >
       <GoogleMap
         mapContainerStyle={containerStyle}
-        center={currentPosition} //  상태값을 중심으로 설정
+        center={initialCenter} //  상태값을 중심으로 설정
         zoom={17}
         options={{
           disableDefaultUI: true,

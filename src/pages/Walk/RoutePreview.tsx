@@ -161,6 +161,7 @@ const RoutePreview = () => {
   // 인증하기 버튼 클릭 시 실행될 함수
   const handleAuthenticate = async () => {
     try {
+      let finalReward = 0; // 얻은 리워드
       if (state.isMission) {
         // 미션에서 넘어온 경우: 미션 완료 API 호출
         await api.post(`/user-daily-missions/${state.missionId}/complete`, {
@@ -168,6 +169,7 @@ const RoutePreview = () => {
           currentLatitude: myLocation?.lat,
           currentLongitude: myLocation?.lng,
         });
+        finalReward = state.earnedReward || 3000;
       } else {
         // 일반 수거함에서 넘어온 경우: 이벤트 생성 API 호출
         await api.post("/events", {
@@ -181,10 +183,17 @@ const RoutePreview = () => {
           currentLatitude: myLocation?.lat,
           currentLongitude: myLocation?.lng,
         });
+        finalReward = 100; // 일반 수거 보상 (임시 100)
       }
 
-      // 완료 후 홈 화면으로 이동
-      navigate("/");
+      // 완료 후 성공 화면으로 이동
+      navigate("/complete", {
+        replace: true, // 뒤로가기 했을 때 이 프리뷰 페이지로 다시 못 오게 막음
+        state: {
+          reward: finalReward,
+          distance: routeData?.totalDistanceMeters || 0,
+        },
+      });
     } catch (error) {
       console.error("인증 처리 실패:", error);
       setIsErrorModalOpen(true);
