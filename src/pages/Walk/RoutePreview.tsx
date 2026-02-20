@@ -30,7 +30,8 @@ const RoutePreview = () => {
   const { state } = useLocation(); // 앞 페이지에서 넘긴 데이터 받기
   const { myLocation } = useCurrentLocation(); // 현재 위치 받기
 
-  const { setSheetState, sheetState } = useOutletContext<any>();
+  const { setSheetState, sheetState, setRoutePath, setRoutePolyline } =
+    useOutletContext<any>();
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   const [windowHeight, setWindowHeight] = useState(window.innerHeight);
@@ -62,6 +63,14 @@ const RoutePreview = () => {
         console.log("AI 경로 생성 성공!", res.data);
         setRouteData(res.data); // 성공한 데이터 저장 */
 
+        // 내 위치 -> 목적지로 가는 가짜 좌표 배열 만들기!
+        const mockPath = [
+          { lat: myLocation.lat, lng: myLocation.lng }, // 출발지 (내 위치)
+          { lat: 37.62573454494245, lng: 127.07735834999576 }, // 가짜 중간길 1
+          { lat: 37.625828, lng: 127.074786 }, // 가짜 중간길 2
+          { lat: 37.624828, lng: 127.073786 }, // 도착지 (공릉1동 주민센터 좌표)
+        ];
+
         // 임시 가짜 데이터 (Mock)
         const mockResponse = {
           id: 105,
@@ -75,7 +84,7 @@ const RoutePreview = () => {
           estimatedSteps: 3500,
           averageSlope: "GENTLE",
           activityLevel: "MODERATE",
-          routePolyline: "u{~vF|yhfW~@y@?e@A_@C]?Y???",
+          routePolyline: "_p~iF~ps|U_ulLnnqC_mqNvxq",
           greenSpaceRatio: 0.8,
           crosswalkCount: 3,
           isPedestrianOnly: true,
@@ -107,7 +116,7 @@ const RoutePreview = () => {
             {
               id: 1003,
               routeId: 105,
-              name: "공릉보건지소",
+              name: "공릉1동 주민센터",
               type: "DESTINATION",
               latitude: 37.638,
               longitude: 127.0795,
@@ -122,6 +131,8 @@ const RoutePreview = () => {
           updatedAt: "2026-02-20T20:00:00Z",
         };
         setRouteData(mockResponse);
+        //setRoutePolyline(mockResponse.routePolyline); // 받아온 암호화된 경로 문자열을 지도 컴포넌트로 전달
+        setRoutePath(mockPath);
       } catch (error) {
         console.error("경로 생성 실패:", error);
       } finally {
@@ -130,7 +141,7 @@ const RoutePreview = () => {
     };
 
     generateRoute();
-  }, [myLocation, state]);
+  }, [myLocation, state, setRoutePolyline, setRoutePath]);
 
   const controls = useDragControls();
 
@@ -220,7 +231,7 @@ const RoutePreview = () => {
           <div className="bg-white rounded-full px-5 py-3 flex items-center justify-between shadow-md shadow-[#4A4E56]/6">
             <div className="flex gap-3 items-center">
               <span className="text-primary font-semibold">목적지</span>
-              <span className="font-semibold">공릉보건지소</span>
+              <span className="font-semibold">공릉1동 주민센터</span>
             </div>
             <button onClick={() => setIsModalOpen(!isModalOpen)}>
               <IoClose className="size-6 text-[#6C727C]" />

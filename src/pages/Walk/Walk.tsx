@@ -47,6 +47,9 @@ const Walk = () => {
 
   const { myLocation, isLocating } = useCurrentLocation();
 
+  //const [routePolyline, setRoutePolyline] = useState<string | null>(null); // 경로 PolyLine 상태
+  const [routePath, setRoutePath] = useState<any[]>([]); //일단은 배열로 위도경도 전달
+
   // API 호출 - 화면이 켜지면 실행
   useEffect(() => {
     if (isLocating || !myLocation) return;
@@ -92,6 +95,8 @@ const Walk = () => {
         selectedBinId={selectedBinId}
         setSelectedBinId={setSelectedBinId}
         setSheetState={setSheetState}
+        //routePolyline={routePolyline}
+        routePath={routePath}
       />
       {/*  바텀시트에 Context로 데이터 넘겨주기 */}
       <Outlet
@@ -102,6 +107,10 @@ const Walk = () => {
           loading,
           selectedBinId,
           setSelectedBinId,
+          //routePolyline,
+          //setRoutePolyline,
+          routePath,
+          setRoutePath,
         }}
       />
     </div>
