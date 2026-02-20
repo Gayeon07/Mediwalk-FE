@@ -8,8 +8,8 @@ import {
 } from "react-router-dom";
 import { IoClose } from "react-icons/io5";
 import ConfirmModal from "../../components/ConfirmModal";
-import { useCurrentLocation } from "../../hooks/useCurrentLocation";
 import api from "../../api/axios";
+import ErrorModal from "../../components/ErrorModal";
 
 // 백엔드 영어 데이터를 한글로 변환
 const slopeMap: Record<string, string> = {
@@ -28,17 +28,30 @@ const RoutePreview = () => {
   const navigate = useNavigate();
 
   const { state } = useLocation(); // 앞 페이지에서 넘긴 데이터 받기
-  const { myLocation } = useCurrentLocation(); // 현재 위치 받기
 
-  const { setSheetState, sheetState, setRoutePath, setRoutePolyline } =
-    useOutletContext<any>();
+  const {
+    setSheetState,
+    sheetState,
+    setRoutePath,
+    setRoutePolyline,
+    myLocation,
+    setSelectedBinId,
+  } = useOutletContext<any>();
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState<boolean>(false);
 
   const [windowHeight, setWindowHeight] = useState(window.innerHeight);
 
   // AI 경로 결과 저장할 상태
   const [routeData, setRouteData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // 프리뷰 화면이 열리면 목적지(binId)를 선택된 상태로 지정
+  useEffect(() => {
+    if (binId) {
+      setSelectedBinId(Number(binId));
+    }
+  }, [binId, setSelectedBinId]);
 
   // API 호출 - 화면 켜지고 위치 파악되면 실행
   useEffect(() => {
@@ -174,14 +187,14 @@ const RoutePreview = () => {
       navigate("/");
     } catch (error) {
       console.error("인증 처리 실패:", error);
-      alert("인증에 실패했습니다. 목적지 근처인지 다시 확인해 주세요.");
+      setIsErrorModalOpen(true);
     }
   };
 
   // 경로 생성 로딩 중일 때 보여줄 화면
   if (isLoading) {
     return (
-      <div className="h-dvh flex items-center justify-center bg-white z-50">
+      <div className="absolute inset-0 flex items-center justify-center bg-white/90 backdrop-blur-sm z-50">
         <p className="font-semibold text-lg text-primary animate-pulse">
           AI가 최적의 경로를 디자인하고 있습니다...
         </p>
@@ -192,6 +205,10 @@ const RoutePreview = () => {
   // 모달 제어 함수
   const closeModal = () => {
     setIsModalOpen(false);
+  };
+
+  const closeErrorModal = () => {
+    setIsErrorModalOpen(false);
   };
 
   const confirmModal = () => {
@@ -328,6 +345,13 @@ const RoutePreview = () => {
           detail="목적지를 재설정하여 AI 경로 추천을 받을 수 있어요."
           onClose={closeModal}
           onConfirm={confirmModal}
+        />
+      )}
+      {isErrorModalOpen && (
+        <ErrorModal
+          title="인증에 실패했습니다"
+          detail="목적지 근처인지 다시 확인해 주세요"
+          onClose={closeErrorModal}
         />
       )}
     </>

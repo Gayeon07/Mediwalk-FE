@@ -77,6 +77,16 @@ const Walk = () => {
     fetchData();
   }, [myLocation, isLocating]);
 
+  if (isLocating || !myLocation) {
+    return (
+      <div className="h-dvh flex items-center justify-center bg-white">
+        <p className="font-semibold text-primary animate-pulse">
+          현재 위치를 찾고 있습니다...
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="relative h-dvh">
       {/* 헤더 */}
@@ -97,6 +107,7 @@ const Walk = () => {
         setSheetState={setSheetState}
         //routePolyline={routePolyline}
         routePath={routePath}
+        myLocation={myLocation}
       />
       {/*  바텀시트에 Context로 데이터 넘겨주기 */}
       <Outlet
@@ -111,6 +122,7 @@ const Walk = () => {
           //setRoutePolyline,
           routePath,
           setRoutePath,
+          myLocation,
         }}
       />
     </div>

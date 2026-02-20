@@ -15,12 +15,6 @@ const containerStyle = {
   height: "100%",
 };
 
-// 위치를 못 가져왔을 때 보여줄 기본 좌표
-const defaultCenter = {
-  lat: 37.5559,
-  lng: 126.9723,
-};
-
 // 구글 맵에서 경로 디코딩을 위해 geometry 라이브러리 추가 선언
 //const libraries: "geometry"[] = ["geometry"];
 
@@ -33,6 +27,7 @@ interface MapProps {
   setSheetState: (state: "half" | "collapsed" | "expanded") => void;
   //routePolyline?: string | null;
   routePath?: google.maps.LatLngLiteral[];
+  myLocation: { lat: number; lng: number };
 }
 
 export default function MyGoogleMap({
@@ -43,6 +38,7 @@ export default function MyGoogleMap({
   setSheetState,
   //routePolyline,
   routePath,
+  myLocation,
 }: MapProps) {
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script-2",
@@ -52,7 +48,7 @@ export default function MyGoogleMap({
 
   // 지도 인스턴스와 현재 위치를 저장할 상태
   const [map, setMap] = useState<google.maps.Map | null>(null);
-  const [currentPosition, setCurrentPosition] = useState(defaultCenter);
+  const [currentPosition, setCurrentPosition] = useState(myLocation);
   const [isTracking, setIsTracking] = useState(true); // 지도 중심이 나를 따라다닐지 여부
 
   // 해독된 경로(위도/경도 배열)를 저장할 상태
@@ -132,7 +128,6 @@ export default function MyGoogleMap({
       routePath.forEach((point) => bounds.extend(point)); // 배열의 점들을 전부 포함하게 범위 잡기
       map.fitBounds(bounds);
 
-      map.panBy(0, 100); // 바텀시트 가려짐 방지
       setIsTracking(false);
     }
   }, [routePath, map]);
@@ -167,7 +162,7 @@ export default function MyGoogleMap({
     >
       <GoogleMap
         mapContainerStyle={containerStyle}
-        center={defaultCenter} //  상태값을 중심으로 설정
+        center={currentPosition} //  상태값을 중심으로 설정
         zoom={17}
         options={{
           disableDefaultUI: true,
