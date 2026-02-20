@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import api from "../../api/axios";
 import { useCurrentLocation } from "../../hooks/useCurrentLocation";
 import { useNavigate } from "react-router-dom";
+import { getTodayDate } from "../../utils/date";
 
 interface UserData {
   id: number;
@@ -14,12 +15,13 @@ interface UserData {
   rewardIncreaseRateComparedToLastMonth: number;
 }
 
-export interface MissionInfo {
+export interface MissionsData {
   id: number;
-  type: string;
-  title: string;
-  detail: string;
-  point: string;
+  missionId: number;
+  collectionLocationId: number;
+  status: string;
+  missionTitle: string;
+  missionDescription: string;
 }
 
 interface BinLocationData {
@@ -32,26 +34,10 @@ interface BinLocationData {
 }
 
 const Home = () => {
-  const mockMissions: MissionInfo[] = [
-    {
-      id: 1,
-      type: "medicine",
-      title: "오늘의 폐의약품 수거 미션",
-      detail: "옆 동네 보건소에 버리고 오기",
-      point: "300P",
-    },
-    {
-      id: 2,
-      type: "walk",
-      title: "오늘의 운동 미션",
-      detail: "약수터 거쳐서 약국 가기",
-      point: "100P",
-    },
-  ];
-
   const { myLocation, isLocating } = useCurrentLocation();
 
   const [user, setUser] = useState<UserData | null>(null);
+  const [missions, setMissions] = useState<MissionsData[]>([]);
   const [bins, setBins] = useState<BinLocationData[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -68,7 +54,17 @@ const Home = () => {
         const userRes = await api.get("/users/1");
         setUser(userRes.data);
 
-        // 2. 근처 수거함 가져오기 (현재 내 위치 위도/경도 넣음)
+        // 2. 미션 정보 가져오기
+        const today = getTodayDate();
+        const missionRes = await api.get("/user-daily-missions", {
+          params: {
+            userId: userRes.data.id,
+            missionDate: today,
+          },
+        });
+        setMissions(missionRes.data);
+
+        // 3. 근처 수거함 가져오기 (현재 내 위치 위도/경도 넣음)
         const binRes = await api.get("/collection-locations/nearby", {
           params: {
             latitude: myLocation.lat,
@@ -126,7 +122,7 @@ const Home = () => {
           <div className="font-semibold text-xl px-6 mt-3">오늘의 미션</div>
           <div className="flex flex-nowrap no-scrollbar overflow-x-auto gap-4 py-3">
             <div className="px-1"></div>
-            {mockMissions.map((mission) => {
+            {missions.map((mission) => {
               return <MissionCard key={mission.id} info={mission} />;
             })}
             <div className="px-1"></div>
