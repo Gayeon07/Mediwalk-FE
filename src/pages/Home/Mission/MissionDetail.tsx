@@ -50,6 +50,7 @@ const MissionDetail = () => {
         destinationId: mission?.collectionLocationId,
         isMission: true, // 미션에서 넘어왔다는 표시
         missionId: missionId,
+        earnedReward: mission?.earnedReward,
         filters: {
           activityLevel: mapActivityLevel(activeLevel),
           slopeLevel: mapSlopeLevel(slopeLevel),

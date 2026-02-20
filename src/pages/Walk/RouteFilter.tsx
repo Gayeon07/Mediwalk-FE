@@ -50,6 +50,7 @@ const RouteFilter = () => {
     navigate(`/walk/preview/${binId}`, {
       state: {
         destinationId: Number(binId),
+        name: bin?.name,
         isMission: false, // 일반 모드라는 표시
         filters: {
           activityLevel: mapActivityLevel(activeLevel),
