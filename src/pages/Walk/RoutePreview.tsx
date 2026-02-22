@@ -7,6 +7,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import { IoClose } from "react-icons/io5";
+import { PiMapPinFill } from "react-icons/pi";
 import ConfirmModal from "../../components/ConfirmModal";
 import api from "../../api/axios";
 import ErrorModal from "../../components/ErrorModal";
@@ -165,9 +166,9 @@ const RoutePreview = () => {
       if (state.isMission) {
         // 미션에서 넘어온 경우: 미션 완료 API 호출
         await api.post(`/user-daily-missions/${state.missionId}/complete`, {
-          earnedReward: state.earnedReward, // (임시) 원래는 이전 페이지에서 넘어온 보상 금액을 넣어야 함
-          currentLatitude: myLocation?.lat,
-          currentLongitude: myLocation?.lng,
+          earnedReward: state.earnedReward || 3000, // (임시) 원래는 이전 페이지에서 넘어온 보상 금액을 넣어야 함
+          currentLatitude: 37.618839703254395,
+          currentLongitude: 127.07549661397934,
         });
         finalReward = state.earnedReward || 3000;
       } else {
@@ -180,6 +181,8 @@ const RoutePreview = () => {
           eventDateTime: new Date().toISOString(),
           collectionLocationId: state.destinationId,
           routeId: routeData?.id,
+          //currentLatitude: 37.624828,
+          //currentLongitude: 127.073786,
           currentLatitude: myLocation?.lat,
           currentLongitude: myLocation?.lng,
         });
@@ -325,10 +328,13 @@ const RoutePreview = () => {
                       )}
                     </div>
                     <div className="pb-8">
-                      <div className="flex items-center gap-2 mb-1.5 font-bold text-gray-700">
+                      <div className="flex items-center gap-1 mb-1.5 font-bold text-[#6C727C] text-caption1_m_13">
+                        <span>
+                          <PiMapPinFill className="size-4 text-primary" />
+                        </span>
                         {point.name}
                       </div>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-body1_m_16 text-[#202123] ">
                         {point.instruction}
                       </p>
                     </div>
