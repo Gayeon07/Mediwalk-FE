@@ -113,7 +113,7 @@ const Home = () => {
           </div>
         </header>
 
-        <div className="flex flex-col py-5">
+        <div className="flex flex-col pt-5">
           {/* 인사말, 리워드 */}
           <section className="px-5 flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
