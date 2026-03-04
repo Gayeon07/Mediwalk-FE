@@ -2,7 +2,7 @@ import NotiIcon from "../../assets/icons/noti_line.svg?react";
 import ArrowIcon from "../../assets/icons/arrow2_right.svg?react";
 import MissionCard from "./Mission/MissionCard";
 import BinCard from "./BinCard";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import api from "../../api/axios";
 import { useCurrentLocation } from "../../hooks/useCurrentLocation";
 import { useNavigate } from "react-router-dom";
@@ -45,6 +45,22 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
+
+  // 인디케이터용 상태 및 ref 추가
+  const [currentMissionIndex, setCurrentMissionIndex] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // 스크롤 될 때마다 현재 인덱스를 계산하는 함수
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    const scrollLeft = scrollRef.current.scrollLeft;
+    // 카드 하나의 너비 대략
+    const cardWidth = 256;
+
+    // 현재 스크롤 위치를 카드 너비로 나누어 반올림하면 현재 인덱스
+    const newIndex = Math.round(scrollLeft / cardWidth);
+    setCurrentMissionIndex(newIndex);
+  };
 
   // API 호출 - 화면이 켜지면 실행
   useEffect(() => {
@@ -125,16 +141,29 @@ const Home = () => {
           {/* 오늘의 미션 */}
           <section>
             <div className="text-title1_sb_20 px-5 mt-7 mb-2">오늘의 미션</div>
-            <div className="flex flex-nowrap no-scrollbar overflow-x-auto gap-2 pb-3">
+            <div
+              ref={scrollRef}
+              onScroll={handleScroll}
+              className="flex flex-nowrap no-scrollbar overflow-x-auto gap-2 pb-3"
+            >
               <div className="px-1.5"></div>
               {missions.map((mission) => {
                 return <MissionCard key={mission.id} info={mission} />;
               })}
               <div className="px-1.5"></div>
             </div>
+            {/* 동적 인디케이터 (현재 인덱스에 따라 색상 변경) */}
             <div className="flex gap-1.5 pb-3 justify-center mb-5">
-              <span className="bg-primary rounded-full h-1.5 w-1.5"></span>
-              <span className="bg-neutral-90 rounded-full h-1.5 w-1.5"></span>
+              {missions.map((_, index) => (
+                <span
+                  key={index}
+                  className={`rounded-full h-1.5 w-1.5 transition-colors duration-300 ${
+                    currentMissionIndex === index
+                      ? "bg-primary"
+                      : "bg-neutral-90"
+                  }`}
+                />
+              ))}
             </div>
           </section>
           {/* 근처 폐의약품 수거함 */}
