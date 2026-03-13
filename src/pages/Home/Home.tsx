@@ -1,4 +1,3 @@
-import NotiIcon from "../../assets/icons/noti_line.svg?react";
 import ArrowIcon from "../../assets/icons/arrow2_right.svg?react";
 import MissionCard from "./Mission/MissionCard";
 import BinCard from "./BinCard";
@@ -6,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import api from "../../api/axios";
 import { useCurrentLocation } from "../../hooks/useCurrentLocation";
 import { useNavigate } from "react-router-dom";
+import Header from "../../components/Header";
 import { getTodayDate } from "../../utils/date";
 
 interface UserData {
@@ -106,12 +106,7 @@ const Home = () => {
     <>
       <div className="flex flex-col">
         {/* 헤더 */}
-        <header className="sticky top-0 z-50 bg-background flex h-15 justify-between items-baseline-last px-5 pb-3">
-          <div className="text-poppins-bold">mediwalk</div>
-          <div className="cursor-pointer">
-            <NotiIcon />
-          </div>
-        </header>
+        <Header />
 
         <div className="flex flex-col pt-5">
           {/* 인사말, 리워드 */}

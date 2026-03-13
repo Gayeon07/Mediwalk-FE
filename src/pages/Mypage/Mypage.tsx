@@ -1,5 +1,11 @@
+import Header from "../../components/Header";
+
 const Mypage = () => {
-  return <div>마이</div>;
+  return (
+    <div>
+      <Header />
+    </div>
+  );
 };
 
 export default Mypage;

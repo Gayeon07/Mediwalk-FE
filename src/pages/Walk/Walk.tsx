@@ -4,6 +4,7 @@ import { Outlet, useLocation, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import api from "../../api/axios";
 import { useCurrentLocation } from "../../hooks/useCurrentLocation";
+import Header from "../../components/Header";
 
 export interface BinLocationData {
   id: number;
@@ -90,14 +91,7 @@ const Walk = () => {
   return (
     <div className="relative h-dvh">
       {/* 헤더 */}
-      {!isPreview && (
-        <header className="flex h-16 justify-between items-center px-6">
-          <div className="text-poppins-bold">mediwalk</div>
-          <div className="cursor-pointer">
-            <BiBell className="size-6" />
-          </div>
-        </header>
-      )}
+      {!isPreview && <Header />}
       {/* 지도에 데이터와 상태 넘겨주기 */}
       <MyGoogleMap
         sheetState={sheetState}
