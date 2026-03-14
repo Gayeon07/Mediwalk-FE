@@ -84,16 +84,16 @@ export default function BottomSheet() {
       {/* 회색 바 */}
       <div
         onPointerDown={(e) => controls.start(e)}
-        className="flex justify-center py-4 cursor-grab active:cursor-grabbing touch-none"
+        className="flex justify-center py-3 cursor-grab active:cursor-grabbing touch-none"
       >
-        <div className="w-15 h-1.5 bg-gray-300 rounded-full" />
+        <div className="w-15 h-1 bg-[#C3C7CE] rounded-full" />
       </div>
 
       {/* 내부 콘텐츠 영역 */}
-      <div className="px-6 flex flex-col h-full overflow-hidden">
+      <div className="flex flex-col h-full overflow-hidden">
         {/* 3번 영역: 근처 폐의약품 수거함 리스트 */}
-        <div className="flex flex-col mt-5 flex-1 gap-4 min-h-0">
-          <div className="flex flex-col gap-2">
+        <div className="flex flex-col flex-1 px-3 py-4 gap-3 min-h-0">
+          <div className="flex flex-col gap-1 mx-2">
             <div className="text-title1_sb_20">
               폐의약품 수거함{" "}
               <span className="text-primary">{bins.length}</span>건
