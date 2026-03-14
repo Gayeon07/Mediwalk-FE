@@ -107,7 +107,7 @@ const MissionDetail = () => {
         </section>
 
         {/* 미션 내용 */}
-        <section className="flex flex-col flex-1 gap-3 overflow-hidden no-scrollbar">
+        <section className="flex flex-col flex-1 gap-3 rounded-t-xl overflow-hidden overflow-y-auto no-scrollbar">
           {/* 목적지, 거리, 보상 박스 */}
           <div className="flex flex-col gap-5 p-4 bg-white rounded-xl shadow-card">
             {/* 목적지, 거리 */}
@@ -151,7 +151,7 @@ const MissionDetail = () => {
             </div>
           </div>
           {/* 필터 영역 */}
-          <div className="flex flex-col gap-5 px-4 py-2 bg-white rounded-t-xl shadow-card overflow-y-auto no-scrollbar">
+          <div className="flex flex-col gap-5 px-4 py-2 mb-25 shadow-card bg-white rounded-xl">
             {/* 건강 맞춤형 필터 */}
             <div className="flex flex-col gap-4 py-3.5">
               <h2 className="text-sub1_sb_18">건강 맞춤형 필터</h2>
@@ -184,7 +184,7 @@ const MissionDetail = () => {
               </div>
             </div>
             {/* 환경 맞춤형 필터 */}
-            <div className="flex flex-col gap-4 pt-3.5 pb-20">
+            <div className="flex flex-col gap-4 py-3.5">
               <h2 className="text-sub1_sb_18">환경 맞춤형 필터</h2>
               <div className="flex flex-col gap-5">
                 {/* 자연 친화 */}
