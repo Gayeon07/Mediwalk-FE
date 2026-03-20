@@ -1,5 +1,11 @@
+import Header from "../../components/Header";
+
 const Reward = () => {
-  return <div>Reward</div>;
+  return (
+    <div>
+      <Header />
+    </div>
+  );
 };
 
 export default Reward;
