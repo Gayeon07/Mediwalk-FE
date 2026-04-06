@@ -128,9 +128,9 @@ const Reward = () => {
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
 
-      <main className="flex flex-col px-5 py-3 gap-3 w-full">
+      <main className="flex flex-col px-5 py-3 w-full">
         {/* Top Total Reward Card */}
-        <section className="bg-primary flex flex-col px-4 pt-5 pb-4 gap-3 rounded-xl text-common-white shadow-card">
+        <section className="bg-primary flex flex-col px-4 pt-5 pb-4 mb-3 gap-3 rounded-xl text-common-white shadow-card">
           <div className="flex flex-col">
             <div className="text-body2_m_14">총 적립 리워드</div>
             <div className="flex items-center justify-between">
