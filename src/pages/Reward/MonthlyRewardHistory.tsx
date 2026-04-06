@@ -8,11 +8,16 @@ import { useState } from "react";
 const MonthlyRewardHistory = () => {
   const navigate = useNavigate();
 
-  const [activeFilter, setActiveFilter] = useState<"최신순" | "오래된 순">(
+  const [activeFilter, setActiveFilter] = useState<"최신순" | "과거순">(
     "최신순",
   );
 
-  const handleFilter = () => {};
+  const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
+
+  const handleFilter = (selectedFilter: "최신순" | "과거순") => {
+    setActiveFilter(selectedFilter);
+    setIsFilterOpen(!isFilterOpen);
+  };
   return (
     <div className="flex flex-col px-5">
       <header className="pt-6 pb-3 items-baseline shrink-0">
@@ -28,17 +33,41 @@ const MonthlyRewardHistory = () => {
           </div>
         </section>
         <section className="flex flex-col gap-2">
-          <div className="flex justify-between items-center">
+          <div className="flex relative justify-between items-center">
             <div className="flex gap-0.5 text-sub2_m_18">
               총<span className="text-primary text-sub1_sb_18">2</span>회
             </div>
             <div
               className="flex gap-1 py-1.5 pl-3 text-body2_m_14 text-cool-neutral-40 items-center cursor-pointer"
-              onClick={handleFilter}
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
             >
               <FilterIcon className="w-4 h-4 text-cool-neutral-60" />
               {activeFilter}
             </div>
+            {isFilterOpen && (
+              <div className="flex flex-col absolute z-50 text-center top-10 right-0 bg-common-white text-body2_m_14 rounded-sm border border-cool-neutral-90">
+                <div
+                  className={`px-5 py-1.5 rounded-t-sm cursor-pointer ${
+                    activeFilter === "최신순"
+                      ? "bg-primary-extralight text-primary"
+                      : "bg-common-white text-cool-neutral-30"
+                  }`}
+                  onClick={() => handleFilter("최신순")}
+                >
+                  최신순
+                </div>
+                <div
+                  className={`px-5 py-1.5 rounded-b-sm cursor-pointer ${
+                    activeFilter === "과거순"
+                      ? "bg-primary-extralight text-primary"
+                      : "bg-common-white text-cool-neutral-30"
+                  }`}
+                  onClick={() => handleFilter("과거순")}
+                >
+                  과거순
+                </div>
+              </div>
+            )}
           </div>
           <div className="flex flex-col gap-2">
             <article className="flex gap-2.5 p-4 rounded-xl bg-[#EDF3FF] border-[1.5px] border-primary">
