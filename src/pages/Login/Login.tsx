@@ -19,11 +19,9 @@ const Login = () => {
         </div>
       </section>
       <section className="flex flex-col items-center w-full max-w-md gap-7 px-5 mb-20 bottom-0 fixed">
-        <div className="flex w-full items-center justify-center bg-common-white rounded-lg shadow-card cursor-pointer">
-          <button className="flex items-center gap-3 p-3.5 text-lg font-semibold leading-5 tracking-[-0.015em] text-[#1F1F1F]">
-            <GoogleLogo className="w-6 h-6" />
-            구글로 계속하기
-          </button>
+        <div className="flex w-full items-center justify-center gap-3 p-3.5 text-lg font-semibold leading-5 tracking-[-0.015em] text-[#1F1F1F] bg-common-white rounded-lg shadow-card cursor-pointer">
+          <GoogleLogo className="w-6 h-6" />
+          구글로 계속하기
         </div>
         <div className="flex flex-col gap-1 text-caption4_r_12 text-neutral-30">
           <div>로그인하시면 아래 내용에 동의하는 것으로 간주됩니다.</div>
