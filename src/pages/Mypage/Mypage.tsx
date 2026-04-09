@@ -3,8 +3,29 @@ import PillIcon from "../../assets/icons/pill_logo.svg?react";
 import SettingListItem from "./SettingListItem";
 import useUserStore from "../../store/useUserStore";
 
+import { useNavigate } from "react-router-dom";
+import { signOut } from "firebase/auth";
+import { auth } from "../../api/firebase";
+
 const Mypage = () => {
-  const { name, email } = useUserStore();
+  const navigate = useNavigate();
+  const { name, email, clearUser } = useUserStore();
+
+  const handleLogout = async () => {
+    try {
+      // 파이어베이스 로그아웃 (구글 세션 끊기)
+      await signOut(auth);
+
+      // Zustand 비우기 (이 함수가 실행되면 persist가 알아서 로컬 스토리지 백업)
+      clearUser();
+
+      // 로그인 페이지로 강제 이동 (replace: true 로 뒤로가기 방지)
+      navigate("/login", { replace: true });
+    } catch (error) {
+      console.error("로그아웃 에러:", error);
+      alert("로그아웃에 실패했습니다. 다시 시도해주세요.");
+    }
+  };
 
   return (
     <div>
@@ -25,7 +46,10 @@ const Mypage = () => {
                 </span>
               </div>
             </div>
-            <button className="px-3 py-1.5 bg-neutral-99 border border-neutral-95 rounded-sm text-cool-neutral-40 text-caption1_m_13">
+            <button
+              onClick={handleLogout}
+              className="px-3 py-1.5 bg-neutral-99 border border-neutral-95 rounded-sm text-cool-neutral-40 text-caption1_m_13 cursor-pointer"
+            >
               로그아웃
             </button>
           </div>
