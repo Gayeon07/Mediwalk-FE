@@ -7,14 +7,14 @@ const ToggleButton = ({ isOn, onToggle }: ToggleProps) => {
   return (
     <button
       onClick={onToggle}
-      className={`relative w-10 h-6 flex items-center rounded-full px-1 transition-colors duration-300 ${
-        isOn ? "bg-primary" : "bg-gray-300"
+      className={`relative w-11.5 h-6 flex items-center rounded-full transition-colors duration-300 ${
+        isOn ? "bg-primary" : "bg-neutral-90"
       }`}
     >
       {/* 토글 내부의 하얀 원 */}
       <div
-        className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-300 ${
-          isOn ? "translate-x-4" : "translate-x-0"
+        className={`w-5 h-5 bg-white rounded-full transform transition-transform duration-300 ${
+          isOn ? "translate-x-6" : "translate-x-0.5"
         }`}
       />
     </button>

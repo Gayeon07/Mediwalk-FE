@@ -1,13 +1,19 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { IoClose } from "react-icons/io5";
-import { PiMapPinFill } from "react-icons/pi";
-import { FaAngleRight } from "react-icons/fa6";
+import CloseIcon from "../../assets/icons/delete_line.svg?react";
+import LocationIcon from "../../assets/icons/location_fill.svg?react";
+import ArrowIcon from "../../assets/icons/arrow2_right.svg?react";
 import ToggleButton from "../../components/ToggleButton";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { BinLocationData } from "./Walk";
+import api from "../../api/axios";
+import { mapActivityLevel, mapSlopeLevel } from "../../utils/filter";
 
 const RouteFilter = () => {
   const navigate = useNavigate();
   const { binId } = useParams();
+  const [loading, setLoading] = useState(true);
+
+  const [bin, setBin] = useState<BinLocationData | null>(null);
 
   const [activeLevel, setActiveLevel] = useState<string | null>(null);
   const [slopeLevel, setSlopeLevel] = useState<string | null>(null);
@@ -19,21 +25,59 @@ const RouteFilter = () => {
   // 버튼 활성화 여부 판단 (활동량과 경사도가 모두 null이 아닐 때)
   const isFormValid = activeLevel !== null && slopeLevel !== null;
 
+  // API 호출 - 화면이 켜지면 실행
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+
+        // 수거함 정보 가져오기
+        const binRes = await api.get(`/collection-locations/${binId}`);
+        setBin(binRes.data);
+      } catch (error) {
+        console.error("데이터 로딩 실패:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const handleSubmit = () => {
+    if (!isFormValid) return;
+
+    navigate(`/walk/preview/${binId}`, {
+      state: {
+        destinationId: Number(binId),
+        name: bin?.name,
+        isMission: false, // 일반 모드라는 표시
+        filters: {
+          activityLevel: mapActivityLevel(activeLevel),
+          slopeLevel: mapSlopeLevel(slopeLevel),
+          includeRestPoints: isRestingPointOn,
+          natureFriendly: isNatureFriendly,
+          pedestrianOnly: isPedestrianZone,
+        },
+      },
+    });
+  };
+
   // 필터 버튼 선택
   const renderFilterButtons = (
     options: string[],
     current: string | null,
     setter: (val: string) => void,
   ) => (
-    <div className="flex gap-3">
+    <div className="flex gap-1.5">
       {options.map((option) => (
         <button
           key={option}
           onClick={() => setter(option)}
-          className={`px-5 py-2 rounded-lg text-sm transition-colors duration-200 ${
+          className={`px-4 py-2 rounded-md text-body2_m_14 text-[#41464E] transition-colors duration-200 ${
             current === option
-              ? "bg-gray-600 text-white"
-              : "bg-white text-gray-600 border border-gray-500"
+              ? "bg-cool-neutral-30 text-white"
+              : "bg-white ring-1 ring-inset ring-cool-neutral-70"
           }`}
         >
           {option}
@@ -42,12 +86,6 @@ const RouteFilter = () => {
     </div>
   );
 
-  /// 경로 확인 제출 함수
-  const handleSubmit = () => {
-    if (!isFormValid) return; // 활성화되지 않았을 때는 함수 실행 방지
-    navigate(`/walk/preview/${binId}`);
-  };
-
   // 닫힘
   const handleClose = () => {
     navigate(`/walk/${binId}`);
@@ -55,53 +93,54 @@ const RouteFilter = () => {
 
   return (
     // 부모의 지도 위에 덮이는 고정 레이아웃
-    <div className="fixed inset-x-0 bottom-0 top-20 bg-white max-w-md mx-auto z-50 rounded-t-3xl flex flex-col overflow-hidden">
-      <div className="px-5.5 mt-9 mb-3 flex justify-between items-center">
-        <h2 className="text-xl font-bold">AI 맞춤 경로 디자인</h2>
-        <button onClick={handleClose} className="p-1">
-          <IoClose className="size-8 text-[#52575E]" />
+    <div className="fixed inset-x-0 px-5 bottom-0 top-20 bg-white max-w-md mx-auto z-50 rounded-t-3xl flex flex-col overflow-hidden">
+      <div className="mt-8 mb-5 flex justify-between items-center">
+        <h2 className="text-title1_sb_20">AI 맞춤 경로 디자인</h2>
+        <button onClick={handleClose}>
+          <CloseIcon className="text-[#52575E] w-6 h-6" />
         </button>
       </div>
 
-      <div className="flex justify-center items-center px-5.5 py-2 mb-4">
-        <div className="w-full px-4.5 py-3 flex justify-between items-center bg-[#F3F7FF] border border-primary rounded-full">
-          <div className="flex gap-1.5 items-center font-semibold">
-            <PiMapPinFill className="text-primary size-5" />
-            <span>나의 목적지</span>
+      <div className="flex justify-center items-center mb-5">
+        <div className="w-full pl-3 pr-4 py-3 flex justify-between items-center bg-[#F3F7FF] border border-primary rounded-full">
+          <div className="flex gap-1 items-center">
+            <LocationIcon className="text-primary w-5 h-5" />
+            <span className="text-sub3_sb_16 text-[#202123]">나의 목적지</span>
           </div>
           <div
             onClick={() => navigate(`/walk/${binId}`)}
-            className="flex gap-1 items-center text-[#202123] cursor-pointer"
+            className="flex items-center text-body1_m_16 text-[#202123] cursor-pointer"
           >
-            <span>강남구 보건소</span>
-            <FaAngleRight className="size-4" />
+            <span>{bin?.name}</span>
+            <ArrowIcon className="text-[#202123] w-5 h-5" />
           </div>
         </div>
       </div>
 
-      <div className="flex flex-col gap-5 px-5.5 py-5">
+      {/* 필터 영역 */}
+      <div className="flex flex-col gap-4">
         {/* 건강 맞춤형 필터 */}
-        <div className="flex flex-col gap-4 mb-4">
-          <h2 className="text-lg font-semibold">건강 맞춤형 필터</h2>
-          <div className="flex flex-col gap-4 mb-5">
-            <div className="flex flex-col gap-1.5">
-              <h5 className="font-medium text-sm">활동량</h5>
+        <div className="flex flex-col gap-4 py-3.5">
+          <h2 className="text-sub1_sb_18">건강 맞춤형 필터</h2>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <h5 className="text-body2_m_14 text-[#202123]">활동량</h5>
               {renderFilterButtons(
                 ["적당한", "활발한", "최대의"],
                 activeLevel,
                 setActiveLevel,
               )}
             </div>
-            <div className="flex flex-col gap-1.5">
-              <h5 className="font-medium text-sm">경사도</h5>
+            <div className="flex flex-col gap-2">
+              <h5 className="text-body2_m_14 text-[#202123]">경사도</h5>
               {renderFilterButtons(
                 ["완만한", "적당한", "가파른"],
                 slopeLevel,
                 setSlopeLevel,
               )}
             </div>
-            <div className="flex justify-between items-center mt-2">
-              <p className="font-medium">휴식 포인트 배치</p>
+            <div className="flex justify-between items-center py-1">
+              <p className="text-body2_m_14 text-[#202123]">휴식 포인트 배치</p>
               <ToggleButton
                 isOn={isRestingPointOn}
                 onToggle={() => setIsRestingPoint(!isRestingPointOn)}
@@ -110,14 +149,14 @@ const RouteFilter = () => {
           </div>
         </div>
         {/* 환경 맞춤형 필터 */}
-        <div className="flex flex-col gap-4 py-3">
-          <h2 className="text-lg font-semibold">환경 맞춤형 필터</h2>
+        <div className="flex flex-col gap-4 py-3.5">
+          <h2 className="text-sub1_sb_18">환경 맞춤형 필터</h2>
           <div className="flex flex-col gap-5">
             {/* 자연 친화 */}
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center py-1">
               <div>
-                <p className="font-medium">자연 친화</p>
-                <p className="text-xs text-gray-500">
+                <p className="text-body2_m_14 text-[#202123]">자연 친화</p>
+                <p className="text-caption3_r_13 text-[#4E545D]">
                   녹지율이 높은 경로를 우선순위로 둡니다.
                 </p>
               </div>
@@ -127,10 +166,10 @@ const RouteFilter = () => {
               />
             </div>
             {/* 보행자 전용 */}
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center py-1">
               <div>
-                <p className="font-medium">보행자 전용</p>
-                <p className="text-xs text-gray-500">
+                <p className="text-body2_m_14 text-[#202123]">보행자 전용</p>
+                <p className="text-caption3_r_13 text-[#4E545D]">
                   보행자 전용 도로의 안전한 길을 추천합니다.
                 </p>
               </div>
@@ -142,10 +181,11 @@ const RouteFilter = () => {
           </div>
         </div>
       </div>
-      <div className="px-5.5 fixed bottom-0 pb-12 w-full max-w-md">
+
+      <div className="fixed inset-x-0 mx-auto bottom-0 pt-7 pb-10 px-5 w-full max-w-md">
         <button
           onClick={handleSubmit}
-          className={`w-full font-semibold rounded-xl py-4 ${isFormValid ? "bg-primary text-white" : "bg-cool-neutral-95 text-cool-neutral-70"}`}
+          className={`w-full text-sub3_sb_16 rounded-lg py-4 ${isFormValid ? "bg-primary text-white" : "bg-cool-neutral-95 text-cool-neutral-70"}`}
         >
           AI 맞춤 경로 확인하기
         </button>

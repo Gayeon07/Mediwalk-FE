@@ -2,85 +2,20 @@ import { motion, useDragControls, type PanInfo } from "framer-motion";
 import { useEffect, useState } from "react";
 import BinCard from "./components/BinCard";
 import { useOutletContext, useParams } from "react-router-dom";
-
-export interface BinInfo {
-  id: number;
-  title: string;
-  detail: string;
-  distance: number;
-  time: number;
-  step: number;
-  reward: number;
-}
+import type { WalkContextType } from "./Walk";
 
 export default function BottomSheet() {
-  const mockBinInfo: BinInfo[] = [
-    {
-      id: 1,
-      title: "강남구 보건소",
-      detail: "서울시 강남구 학동로 456",
-      distance: 350,
-      time: 5,
-      step: 450,
-      reward: 3000,
-    },
-    {
-      id: 2,
-      title: "선릉역 약국",
-      detail: "서울시 강남구 테헤란로 303",
-      distance: 580,
-      time: 8,
-      step: 750,
-      reward: 4000,
-    },
-    {
-      id: 3,
-      title: "역삼동 주민센터",
-      detail: "서울시 강남구 테헤란로 8길 22",
-      distance: 720,
-      time: 10,
-      step: 930,
-      reward: 5000,
-    },
-    {
-      id: 4,
-      title: "논현역 메디 약국",
-      detail: "서울시 강남구 학동로 456",
-      distance: 720,
-      time: 12,
-      step: 950,
-      reward: 3000,
-    },
-    {
-      id: 5,
-      title: "선릉역 약국",
-      detail: "서울시 강남구 테헤란로 303",
-      distance: 800,
-      time: 15,
-      step: 980,
-      reward: 4000,
-    },
-    {
-      id: 6,
-      title: "선릉역 약국",
-      detail: "서울시 강남구 테헤란로 303",
-      distance: 800,
-      time: 15,
-      step: 980,
-      reward: 4000,
-    },
-  ];
-
-  // 부모(Walk)가 내려준 상태 꺼내기
-  const { sheetState, setSheetState } = useOutletContext<{
-    sheetState: "half" | "collapsed" | "expanded";
-    setSheetState: (s: any) => void;
-  }>();
+  // 부모(Walk)가 내려준 데이터 몽땅 꺼내기
+  const {
+    sheetState,
+    setSheetState,
+    bins,
+    loading,
+    selectedBinId,
+    setSelectedBinId,
+  } = useOutletContext<WalkContextType>();
 
   const { binId } = useParams();
-  const [selectedBinId, setSelectedBinId] = useState<number | null>(
-    binId ? Number(binId) : null,
-  );
 
   useEffect(() => {
     if (binId) {
@@ -149,32 +84,47 @@ export default function BottomSheet() {
       {/* 회색 바 */}
       <div
         onPointerDown={(e) => controls.start(e)}
-        className="flex justify-center py-4 cursor-grab active:cursor-grabbing touch-none"
+        className="flex justify-center py-3 cursor-grab active:cursor-grabbing touch-none"
       >
-        <div className="w-15 h-1.5 bg-gray-300 rounded-full" />
+        <div className="w-15 h-1 bg-[#C3C7CE] rounded-full" />
       </div>
 
       {/* 내부 콘텐츠 영역 */}
-      <div className="px-6 flex flex-col h-full overflow-hidden">
+      <div className="flex flex-col h-full overflow-hidden">
         {/* 3번 영역: 근처 폐의약품 수거함 리스트 */}
-        <div className="flex flex-col mt-5 flex-1 gap-4 min-h-0">
-          <div className="font-bold text-lg">근처 폐의약품 수거함</div>
+        <div className="flex flex-col flex-1 px-3 py-4 gap-3 min-h-0">
+          <div className="flex flex-col gap-1 mx-2">
+            <div className="text-title1_sb_20">
+              폐의약품 수거함{" "}
+              <span className="text-primary">{bins.length}</span>건
+            </div>
+            <div className="text-body4_r_14 text-neutral-40">
+              현 위치 기준 3km 이내의 수거함만 노출됩니다
+            </div>
+          </div>
           <div
             className={`flex flex-col flex-1 gap-2 pb-45 no-scrollbar ${sheetState === "expanded" ? "overflow-y-auto" : "overflow-hidden"}`}
           >
-            {mockBinInfo.map((bin) => {
-              return (
+            {loading ? (
+              <div className="flex justify-center py-10 text-gray-400">
+                수거함을 찾고 있어요...
+              </div>
+            ) : (
+              bins?.map((bin) => (
                 <BinCard
                   key={bin.id}
                   info={bin}
                   onClick={() => {
-                    if (bin.id === selectedBinId) setSelectedBinId(null);
-                    else setSelectedBinId(bin.id);
+                    if (bin.id === selectedBinId) {
+                      setSelectedBinId(null);
+                    } else {
+                      setSelectedBinId(bin.id);
+                    }
                   }}
                   isSelected={selectedBinId === bin.id}
                 />
-              );
-            })}
+              ))
+            )}
           </div>
         </div>
       </div>

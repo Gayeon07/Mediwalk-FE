@@ -1,5 +1,6 @@
-import { FaAngleRight } from "react-icons/fa6";
-import { PiMapPinFill } from "react-icons/pi";
+import ArrowIcon from "../../assets/icons/arrow2_right.svg?react";
+import LocationIcon from "../../assets/icons/location_fill.svg?react";
+import BulletIcon from "../../assets/icons/bullet.svg?react";
 
 interface BinInfo {
   id: number;
@@ -11,27 +12,38 @@ interface BinInfo {
 
 interface BinCardProps {
   info: BinInfo;
+  onClick?: () => void;
 }
 
-const BinCard = ({ info }: BinCardProps) => {
+const BinCard = ({ info, onClick }: BinCardProps) => {
   return (
-    <div className="flex p-4 gap-2 bg-white w-full h-24 rounded-2xl border border-gray-100 shadow-xs">
+    <div
+      onClick={onClick}
+      className="flex p-4 gap-1.5 bg-white w-full py-4 pr-4 pl-3 rounded-2xl shadow-card"
+    >
       <div>
-        <PiMapPinFill className="text-primary size-5 mt-0.5" />
+        <LocationIcon className="text-primary w-5 h-5" />
       </div>
-      <div className="w-full flex flex-col gap-2 justify-center">
-        <div className="flex flex-col gap-0.5">
+      <div className="min-w-0 flex-1 flex flex-col gap-2">
+        <div className="flex flex-col gap-1">
           <div className="flex justify-between items-center">
-            <div className="font-semibold ">{info.title}</div>
+            <div className="text-sub3_sb_16 text-[#31353B]">{info.title}</div>
             <div className="cursor-pointer">
-              <FaAngleRight className="text-gray-500" />
+              <ArrowIcon className="text-[#4A4E56] w-5 h-5" />
             </div>
           </div>
-          <div className="text-xs text-gray-500">{info.detail}</div>
+          <div className="text-caption3_r_13 text-[#6C727C]">{info.detail}</div>
         </div>
-        <div className="text-xs ">
-          <span className="text-primary font-medium">{info.distance}m</span>
-          <span className="text-gray-500"> • 리워드 {info.reward}원</span>
+        <div className="flex gap-0.5 items-center">
+          <span className="text-primary text-caption1_m_13">
+            {info.distance}m
+          </span>
+          <span>
+            <BulletIcon className="text-[#7A8396] w-4 h-4" />
+          </span>
+          <span className="text-[#6C727C] text-caption3_r_13">
+            리워드 {info.reward}원
+          </span>
         </div>
       </div>
     </div>
