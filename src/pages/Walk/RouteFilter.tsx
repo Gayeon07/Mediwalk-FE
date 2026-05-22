@@ -5,10 +5,16 @@ import ToggleButton from "../../components/ToggleButton";
 import CoffeeIcon from "../../assets/icons/tea_fill.svg?react";
 import ShoesIcon from "../../assets/icons/shoe_fill.svg?react";
 import FireIcon from "../../assets/icons/fire_fill.svg?react";
+import PillIcon from "../../assets/icons/pill_logo.svg?react";
+import useUserStore from "../../store/useUserStore";
+import { useCurrentLocation } from "../../hooks/useCurrentLocation";
+import api from "../../api/axios";
 
 const RouteFilter = () => {
   const navigate = useNavigate();
   const { binId } = useParams();
+  const { id: userId } = useUserStore();
+  const { myLocation } = useCurrentLocation();
 
   // 현재 스텝 관리 (1 또는 2)
   const [step, setStep] = useState<1 | 2>(1);
@@ -21,6 +27,9 @@ const RouteFilter = () => {
   const [isEcoMart, setIsEcoMart] = useState<boolean>(false);
   const [isWalkAlert, setIsWalkAlert] = useState<boolean>(false);
 
+  // 로딩 상태
+  const [isGenerating, setIsGenerating] = useState(false);
+
   // 1단계 완료 핸들러
   const handleNextStep = () => {
     if (activityLevel) {
@@ -29,38 +38,64 @@ const RouteFilter = () => {
   };
 
   // 최종 제출 핸들러
-  const handleSubmit = () => {
-    // 선택된 데이터들을 모아서 다음 페이지(미리보기)로 전달
-    navigate(`/walk/preview/${binId}`, {
-      state: {
-        destinationId: Number(binId),
-        isMission: false,
-        filters: {
-          activityLevel, // "moderate", "active", "max" 등으로 매핑 필요
-          isRestPoint,
-          isEcoMart,
-          isWalkAlert,
+  const handleSubmit = async () => {
+    if (!userId || !myLocation) {
+      alert("사용자 정보나 현재 위치를 찾을 수 없습니다.");
+      return;
+    }
+
+    try {
+      setIsGenerating(true); // 로딩 시작
+
+      // 백엔드 요청 바디 생성
+      const requestBody = {
+        userId: userId,
+        currentLatitude: myLocation.lat,
+        currentLongitude: myLocation.lng,
+        destinationIds: [Number(binId)],
+        filter: {
+          activityLevel: activityLevel,
+          includeRestPoints: isRestPoint,
+          notifyEcoMart: isEcoMart,
+          notifyWalkingProgress: isWalkAlert,
         },
-      },
-    });
+      };
+      console.log(requestBody);
+
+      // POST 요청 보내기
+      const response = await api.post("/routes/generate", requestBody);
+
+      // 성공하면 받아온 데이터를 가지고 다음 페이지로 넘어감
+      navigate(`/walk/preview/${binId}`, {
+        state: {
+          routeData: response.data,
+          binId: binId,
+        },
+      });
+    } catch (error) {
+      console.error("AI 경로 생성 실패:", error);
+      alert("맞춤 경로를 생성하는 데 실패했습니다. 다시 시도해주세요.");
+    } finally {
+      setIsGenerating(false); // 로딩 종료
+    }
   };
 
   // 1단계 활동량 옵션 데이터
   const activityOptions = [
     {
-      id: "moderate",
+      id: "MODERATE",
       title: "적당히 걷고 싶어요",
       desc: "약 2천 보로, 20분 가량 소요돼요",
       icon: <CoffeeIcon className="w-7 h-7 text-primary" />,
     },
     {
-      id: "active",
+      id: "ACTIVE",
       title: "활발하게 걷고 싶어요",
       desc: "약 4천 보로, 40분 가량 소요돼요",
       icon: <ShoesIcon className="w-7 h-7 text-primary" />,
     },
     {
-      id: "max",
+      id: "MAXIMUM",
       title: "최대치로 걷고 싶어요",
       desc: "약 6천 보로, 1시간 가량 소요돼요",
       icon: <FireIcon className="w-7 h-7 text-primary" />,
@@ -246,6 +281,21 @@ const RouteFilter = () => {
           </button>
         )}
       </div>
+      {isGenerating && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm animate-fade-in">
+          <div className="flex flex-col items-center text-center gap-3">
+            <PillIcon className="w-17 h-17 text-primary m-4" />
+            <div className="flex flex-col gap-2.5">
+              <h1 className="text-head1_sb_24 text-common-black whitespace-pre-line">
+                {"메디워크가 최적의 경로를\n탐색하고 있어요"}
+              </h1>
+              <p className="text-body4_r_14 text-neutral-30 whitespace-pre-line">
+                {"잠시만 기다려주세요.\n곧 적절한 경로를 추천드릴게요"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
