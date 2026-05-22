@@ -26,6 +26,9 @@ export interface WalkContextType {
   loading: boolean;
   selectedBinId: number | null;
   setSelectedBinId: React.Dispatch<React.SetStateAction<number | null>>;
+  routePolyline: string | null;
+  setRoutePolyline: React.Dispatch<React.SetStateAction<string | null>>;
+  myLocation: { lat: number; lng: number } | null;
 }
 
 const Walk = () => {
@@ -34,7 +37,6 @@ const Walk = () => {
 
   const isPreview = location.pathname.includes("preview");
 
-  // 자식이 드래그로 바꿀 상태를 여기서 관리
   const [sheetState, setSheetState] = useState<
     "half" | "collapsed" | "expanded"
   >(binId ? "expanded" : "half");
@@ -47,18 +49,15 @@ const Walk = () => {
 
   const { myLocation, isLocating } = useCurrentLocation();
 
-  //const [routePolyline, setRoutePolyline] = useState<string | null>(null); // 경로 PolyLine 상태
-  const [routePath, setRoutePath] = useState<any[]>([]); //일단은 배열로 위도경도 전달
+  // 💡 가짜 routePath를 지우고 진짜 routePolyline 상태를 살렸습니다!
+  const [routePolyline, setRoutePolyline] = useState<string | null>(null);
 
-  // API 호출 - 화면이 켜지면 실행
   useEffect(() => {
     if (isLocating || !myLocation) return;
 
     const fetchData = async () => {
       try {
         setLoading(true);
-
-        // 근처 수거함 가져오기 (현재 내 위치 위도/경도 임시값 넣음)
         const binRes = await api.get("/collection-locations/nearby", {
           params: {
             latitude: myLocation.lat,
@@ -89,20 +88,18 @@ const Walk = () => {
 
   return (
     <div className="relative h-dvh">
-      {/* 헤더 */}
       {!isPreview && <Header />}
-      {/* 지도에 데이터와 상태 넘겨주기 */}
+
       <MyGoogleMap
         sheetState={sheetState}
         bins={bins}
         selectedBinId={selectedBinId}
         setSelectedBinId={setSelectedBinId}
         setSheetState={setSheetState}
-        //routePolyline={routePolyline}
-        routePath={routePath}
+        routePolyline={routePolyline} // 💡 지도 컴포넌트로 전달
         myLocation={myLocation}
       />
-      {/*  바텀시트에 Context로 데이터 넘겨주기 */}
+
       <Outlet
         context={{
           sheetState,
@@ -111,10 +108,8 @@ const Walk = () => {
           loading,
           selectedBinId,
           setSelectedBinId,
-          //routePolyline,
-          //setRoutePolyline,
-          routePath,
-          setRoutePath,
+          routePolyline,
+          setRoutePolyline, // 💡 프리뷰 컴포넌트(자식)가 값을 세팅할 수 있게 전달
           myLocation,
         }}
       />

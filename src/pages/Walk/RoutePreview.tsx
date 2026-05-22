@@ -13,12 +13,6 @@ import ConfirmModal from "../../components/ConfirmModal";
 import api from "../../api/axios";
 import ErrorModal from "../../components/ErrorModal";
 
-// 백엔드 영어 데이터를 한글로 변환
-const slopeMap: Record<string, string> = {
-  GENTLE: "완만함",
-  MODERATE: "적당함",
-  STEEP: "가파름",
-};
 const activityMap: Record<string, string> = {
   MODERATE: "적당한",
   ACTIVE: "활발한",
@@ -39,6 +33,7 @@ const RoutePreview = () => {
     myLocation,
     setSelectedBinId,
   } = useOutletContext<any>();
+
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isErrorModalOpen, setIsErrorModalOpen] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -47,7 +42,6 @@ const RoutePreview = () => {
 
   // AI 경로 결과 저장할 상태
   const [routeData, setRouteData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
   // 프리뷰 화면이 열리면 목적지(binId)를 선택된 상태로 지정
   useEffect(() => {
@@ -56,186 +50,17 @@ const RoutePreview = () => {
     }
   }, [binId, setSelectedBinId]);
 
-  // API 호출 - 화면 켜지고 위치 파악되면 실행
+  // 이전 페이지에서 넘어온 데이터를 세팅
   useEffect(() => {
-    // 위치 정보가 없거나 state로 넘어온 값이 없으면 튕겨내기
-    if (!myLocation || !state) return;
+    if (state && state.routeData) {
+      setRouteData(state.routeData);
 
-    const generateRoute = async () => {
-      try {
-        setIsLoading(true);
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-
-        /* // api 요청 body
-        const requestBody = {
-          userId: 1, // 현재 로그인한 유저 아이디 (임시 1)
-          currentLatitude: myLocation.lat,
-          currentLongitude: myLocation.lng,
-          destinationIds: [state.destinationId],
-          filter: state.filters,
-        };
-
-        const res = await api.post("/routes/generate", requestBody);
-
-        console.log("AI 경로 생성 성공!", res.data);
-        setRouteData(res.data); // 성공한 데이터 저장 */
-
-        // 내 위치 -> 목적지로 가는 가짜 좌표 배열 만들기!
-        const mockPath = [
-          { lat: myLocation.lat, lng: myLocation.lng }, // 출발지 (내 위치)
-          { lat: 37.625294853394145, lng: 127.0781739504518 }, // 가짜 중간길 1
-          { lat: 37.6253017812431, lng: 127.07791624762802 }, // 가짜 중간길 2
-          { lat: 37.62475891276535, lng: 127.0779524964447 },
-          { lat: 37.624795140824325, lng: 127.07766648994472 },
-          { lat: 37.624756850774546, lng: 127.0776636345529 },
-          { lat: 37.62464004956438, lng: 127.07716508916506 },
-          { lat: 37.62424932620634, lng: 127.07529843747463 },
-          { lat: 37.623797078519246, lng: 127.0745135389438 },
-          { lat: 37.62403372851429, lng: 127.07429005262443 },
-          { lat: 37.624155491649596, lng: 127.07408344251196 },
-          { lat: 37.62409248123931, lng: 127.07398992618778 },
-          { lat: 37.62406101059809, lng: 127.07388794544731 },
-          { lat: 37.62475942903467, lng: 127.07364225637096 },
-          { lat: 37.624828, lng: 127.073786 }, // 도착지 (공릉1동 주민센터 좌표)
-        ];
-
-        // 임시 가짜 데이터 (Mock)
-        const mockResponse = {
-          id: 105,
-          userId: 1,
-          userDailyMissionId: 12,
-          destinationId: 3,
-          startLatitude: 37.629,
-          startLongitude: 127.075,
-          totalDistanceMeters: 618,
-          estimatedWalkTimeMinutes: 40,
-          estimatedSteps: 3500,
-          averageSlope: "GENTLE",
-          activityLevel: "MODERATE",
-          routePolyline: "_p~iF~ps|U_ulLnnqC_mqNvxq",
-          greenSpaceRatio: 0.8,
-          crosswalkCount: 3,
-          isPedestrianOnly: true,
-          isNatureFriendly: true,
-          hasRestPoints: true,
-          restPoints: [
-            {
-              id: 1001,
-              routeId: 105,
-              name: "해오라기 어린이공원",
-              type: "REST_BENCH",
-              latitude: 37.632,
-              longitude: 127.0765,
-              order: 1,
-              distanceFromPrevious: 800,
-              instruction: "해오라기 어린이공원 벤치에서 잠시 쉬어가세요.",
-            },
-            {
-              id: 1002,
-              routeId: 105,
-              name: "GS25 공릉타운점",
-              type: "PARK",
-              latitude: 37.6355,
-              longitude: 127.078,
-              order: 2,
-              distanceFromPrevious: 1200,
-              instruction: "당뇨 관리에 좋은 저당식품들을 구경해보세요.",
-            },
-            {
-              id: 1003,
-              routeId: 105,
-              name: "공릉1동 주민센터",
-              type: "DESTINATION",
-              latitude: 37.638,
-              longitude: 127.0795,
-              order: 3,
-              distanceFromPrevious: 500,
-              instruction: "목적지에 도착했습니다! 운동 완료!",
-            },
-            {
-              id: 1004,
-              routeId: 105,
-              name: "해오라기 어린이공원",
-              type: "REST_BENCH",
-              latitude: 37.632,
-              longitude: 127.0765,
-              order: 1,
-              distanceFromPrevious: 800,
-              instruction: "해오라기 어린이공원 벤치에서 잠시 쉬어가세요.",
-            },
-            {
-              id: 1005,
-              routeId: 105,
-              name: "GS25 공릉타운점",
-              type: "PARK",
-              latitude: 37.6355,
-              longitude: 127.078,
-              order: 2,
-              distanceFromPrevious: 1200,
-              instruction: "당뇨 관리에 좋은 저당식품들을 구경해보세요.",
-            },
-            {
-              id: 1006,
-              routeId: 105,
-              name: "공릉1동 주민센터",
-              type: "DESTINATION",
-              latitude: 37.638,
-              longitude: 127.0795,
-              order: 3,
-              distanceFromPrevious: 500,
-              instruction: "목적지에 도착했습니다! 운동 완료!",
-            },
-            {
-              id: 1007,
-              routeId: 105,
-              name: "해오라기 어린이공원",
-              type: "REST_BENCH",
-              latitude: 37.632,
-              longitude: 127.0765,
-              order: 1,
-              distanceFromPrevious: 800,
-              instruction: "해오라기 어린이공원 벤치에서 잠시 쉬어가세요.",
-            },
-            {
-              id: 1008,
-              routeId: 105,
-              name: "GS25 공릉타운점",
-              type: "PARK",
-              latitude: 37.6355,
-              longitude: 127.078,
-              order: 2,
-              distanceFromPrevious: 1200,
-              instruction: "당뇨 관리에 좋은 저당식품들을 구경해보세요.",
-            },
-            {
-              id: 1009,
-              routeId: 105,
-              name: "공릉1동 주민센터",
-              type: "DESTINATION",
-              latitude: 37.638,
-              longitude: 127.0795,
-              order: 3,
-              distanceFromPrevious: 500,
-              instruction: "목적지에 도착했습니다! 운동 완료!",
-            },
-          ],
-          generatedAt: "2026-02-20T20:00:00Z",
-          completedAt: null,
-          createdAt: "2026-02-20T20:00:00Z",
-          updatedAt: "2026-02-20T20:00:00Z",
-        };
-        setRouteData(mockResponse);
-        //setRoutePolyline(mockResponse.routePolyline); // 받아온 암호화된 경로 문자열을 지도 컴포넌트로 전달
-        setRoutePath(mockPath);
-      } catch (error) {
-        console.error("경로 생성 실패:", error);
-      } finally {
-        setIsLoading(false);
+      // 백엔드에서 받은 암호화된 경로 문자열(Polyline)을 지도 컴포넌트로 전달
+      if (state.routeData.routePolyline) {
+        setRoutePolyline(state.routeData.routePolyline);
       }
-    };
-
-    generateRoute();
-  }, [myLocation, state, setRoutePolyline, setRoutePath]);
+    }
+  }, [state, setRoutePolyline]);
 
   const controls = useDragControls();
 
@@ -243,30 +68,29 @@ const RoutePreview = () => {
   const handleAuthenticate = async () => {
     try {
       let finalReward = 0; // 얻은 리워드
+
       if (state.isMission) {
-        // 미션에서 넘어온 경우: 미션 완료 API 호출
+        // 미션에서 넘어온 경우
         await api.post(`/user-daily-missions/${state.missionId}/complete`, {
-          earnedReward: state.earnedReward || 3000, // (임시) 원래는 이전 페이지에서 넘어온 보상 금액을 넣어야 함
-          currentLatitude: 37.618839703254395,
-          currentLongitude: 127.07549661397934,
+          earnedReward: state.earnedReward || 3000,
+          currentLatitude: myLocation?.lat,
+          currentLongitude: myLocation?.lng,
         });
         finalReward = state.earnedReward || 3000;
       } else {
-        // 일반 수거함에서 넘어온 경우: 이벤트 생성 API 호출
+        // 일반 수거함에서 넘어온 경우
         await api.post("/events", {
-          userId: 1,
+          userId: routeData?.userId || 1, // 백엔드 데이터 활용
           eventType: "MEDICINE_COLLECTION",
-          title: state.name,
+          title: "폐의약품 수거", // 필요시 state.name으로 대체
           rewardAmount: 100,
           eventDateTime: new Date().toISOString(),
-          collectionLocationId: state.destinationId,
+          collectionLocationId: state?.binId || routeData?.destinationId,
           routeId: routeData?.id,
-          currentLatitude: 37.624828,
-          currentLongitude: 127.073786,
-          //currentLatitude: myLocation?.lat,
-          //currentLongitude: myLocation?.lng,
+          currentLatitude: myLocation?.lat,
+          currentLongitude: myLocation?.lng,
         });
-        finalReward = 100; // 일반 수거 보상 (임시 100)
+        finalReward = 100; // 임시
       }
 
       // 완료 후 성공 화면으로 이동
@@ -292,17 +116,6 @@ const RoutePreview = () => {
       setIsErrorModalOpen(true);
     }
   };
-
-  // 경로 생성 로딩 중일 때 보여줄 화면
-  if (isLoading) {
-    return (
-      <div className="absolute inset-0 flex items-center justify-center bg-white/90 backdrop-blur-sm z-50">
-        <p className="font-semibold text-lg text-primary animate-pulse">
-          AI가 최적의 경로를 디자인하고 있습니다...
-        </p>
-      </div>
-    );
-  }
 
   // 모달 제어 함수
   const closeModal = () => {
@@ -393,10 +206,6 @@ const RoutePreview = () => {
                 <div className="flex gap-0.5 items-center">
                   <span className="text-primary text-caption1_m_13">
                     총 {routeData?.totalDistanceMeters}m{" "}
-                  </span>
-                  <BulletIcon className="w-4 h-4 text-[#7A8396]" />
-                  <span className="text-[#40444B] text-caption3_r_13">
-                    평균 경사도 {slopeMap[routeData?.averageSlope]}
                   </span>
                   <BulletIcon className="w-4 h-4 text-[#7A8396]" />
                   <span className="text-[#40444B] text-caption3_r_13">

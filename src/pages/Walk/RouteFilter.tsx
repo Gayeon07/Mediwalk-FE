@@ -72,6 +72,7 @@ const RouteFilter = () => {
           binId: binId,
         },
       });
+      console.log(response.data);
     } catch (error) {
       console.error("AI 경로 생성 실패:", error);
       alert("맞춤 경로를 생성하는 데 실패했습니다. 다시 시도해주세요.");
