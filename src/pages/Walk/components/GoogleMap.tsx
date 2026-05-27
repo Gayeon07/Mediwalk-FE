@@ -1,4 +1,3 @@
-// src/pages/Home/GoogleMap.tsx
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
@@ -8,25 +7,24 @@ import {
   PolylineF,
 } from "@react-google-maps/api";
 import { TbCurrentLocation } from "react-icons/tb";
-import type { BinLocationData } from "../Walk";
+import type { BinLocationData, RouteDataResponse } from "../Walk";
 
 const containerStyle = {
   width: "100%",
   height: "100%",
 };
 
-// 구글 맵에서 경로 디코딩을 위해 geometry 라이브러리 추가 선언
-//const libraries: "geometry"[] = ["geometry"];
+const libraries: ("geometry" | "places")[] = ["geometry"];
 
-// 부모가 넘겨주는 Props 타입 정의
 interface MapProps {
   sheetState: "half" | "collapsed" | "expanded";
   bins: BinLocationData[];
   selectedBinId: number | null;
   setSelectedBinId: (id: number | null) => void;
   setSheetState: (state: "half" | "collapsed" | "expanded") => void;
-  //routePolyline?: string | null;
-  routePath?: google.maps.LatLngLiteral[];
+  routePolyline?: string | null;
+  routeData?: RouteDataResponse | null;
+  focusedLocation?: { lat: number; lng: number } | null;
   myLocation: { lat: number; lng: number };
 }
 
@@ -36,124 +34,114 @@ export default function MyGoogleMap({
   selectedBinId,
   setSelectedBinId,
   setSheetState,
-  //routePolyline,
-  routePath,
+  routePolyline,
+  routeData,
+  focusedLocation,
   myLocation,
 }: MapProps) {
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script-2",
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-    //libraries: libraries,
+    libraries: libraries,
   });
 
-  // 지도 인스턴스와 현재 위치를 저장할 상태
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [currentPosition, setCurrentPosition] = useState(myLocation);
-
-  // 처음 지도 렌더링 시 쓸 '고정된' 초기 위치
   const [initialCenter] = useState(myLocation);
+  const [isTracking, setIsTracking] = useState(true);
 
-  const [isTracking, setIsTracking] = useState(true); // 지도 중심이 나를 따라다닐지 여부
+  const [decodedPath, setDecodedPath] = useState<google.maps.LatLng[]>([]);
 
-  // 해독된 경로(위도/경도 배열)를 저장할 상태
-  //const [decodedPath, setDecodedPath] = useState<google.maps.LatLng[]>([]);
-
-  // 실시간 위치 감시 로직
+  // 1. 내 위치 추적
   useEffect(() => {
     if (!navigator.geolocation) return;
-
-    // watchPosition은 위치가 변할 때마다 콜백을 실행
     const watchId = navigator.geolocation.watchPosition(
-      (_position) => {
+      (position) => {
         const newPos = {
-          lat: 37.62476618466441,
-          lng: 127.07364509499423,
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
         };
-
-        // 1. 마커 위치 업데이트 (마커가 지도를 따라 움직임)
         setCurrentPosition(newPos);
-
-        // 2. 트래킹 모드일 때만 지도 중심 이동
         if (isTracking && map) {
           map.panTo(newPos);
         }
       },
       (error) => console.log(error),
-      {
-        enableHighAccuracy: true,
-        maximumAge: 0, // 항상 최신 위치 가져오기
-        timeout: 5000,
-      }, // 높은 정확도 설정
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 },
     );
-
-    // 컴포넌트 언마운트 시 감시 종료
     return () => navigator.geolocation.clearWatch(watchId);
   }, [isLoaded, map, isTracking]);
 
-  // 바텀시트에서 수거함을 클릭하면 지도의 중심을 그 수거함으로 이동
+  // 2. 바텀시트에서 휴식포인트 클릭 시 특정 마커로 줌인
   useEffect(() => {
-    if (selectedBinId && map && bins.length > 0) {
+    if (focusedLocation && map) {
+      map.panTo(focusedLocation);
+      map.setZoom(18);
+      setIsTracking(false);
+    }
+  }, [focusedLocation, map]);
+
+  // 3. 일반 탐색 모드일 때 수거함 포커싱
+  useEffect(() => {
+    if (!routeData && selectedBinId && map && bins.length > 0) {
       const selectedBin = bins.find((b) => b.id === selectedBinId);
       if (selectedBin) {
         map.panTo({ lat: selectedBin.latitude, lng: selectedBin.longitude });
         map.setZoom(17);
-        setIsTracking(false); // 수거함 볼 때는 내 위치 추적 잠깐 끄기
+        setIsTracking(false);
       }
     }
-  }, [selectedBinId, map, bins]);
+  }, [selectedBinId, map, bins, routeData]);
 
-  /*   // 경로 선(Polyline)이 들어오면 해독해서 지도 중심 맞추기
+  // 프리뷰 페이지 진입 시 전체 경로가 화면에 꽉 차게 줌인
   useEffect(() => {
-    if (routePolyline && window.google) {
-      // 1. 암호화된 문자열을 실제 좌표 배열로 해독
-      const path =
-        window.google.maps.geometry.encoding.decodePath(routePolyline);
-      setDecodedPath(path);
+    if (routePolyline && window.google && window.google.maps.geometry) {
+      try {
+        const path =
+          window.google.maps.geometry.encoding.decodePath(routePolyline);
+        setDecodedPath(path);
 
-      // 2. 경로 전체가 한눈에 보이게 지도 카메라 자동 줌/이동
-      if (map && path.length > 0) {
-        const bounds = new window.google.maps.LatLngBounds();
-        path.forEach((point) => bounds.extend(point));
-        map.fitBounds(bounds);
+        // 포커스된 특정 지점이 없을 때(처음 진입 시) 경로 전체에 맞게 카메라 세팅
+        if (map && path.length > 0 && !focusedLocation) {
+          const bounds = new window.google.maps.LatLngBounds();
+          path.forEach((point) => bounds.extend(point));
 
-        // 바텀시트가 아래를 가리니까 지도를 살짝 위로 올려줌
-        map.panBy(0, 100);
-        setIsTracking(false); // 경로 볼 때는 내 위치 추적 끄기
+          setTimeout(() => {
+            map.fitBounds(bounds, {
+              top: 100,
+              bottom: 30,
+              left: 40,
+              right: 40,
+            });
+          }, 400);
+
+          setIsTracking(false);
+        }
+      } catch (e) {
+        console.error("Polyline 디코딩 실패:", e);
       }
     } else {
-      setDecodedPath([]); // 경로가 없으면 초기화
+      setDecodedPath([]);
     }
-  }, [routePolyline, map]); */
+  }, [routePolyline, map, focusedLocation]);
 
-  // 배열이 들어오면 경로 전체가 보이게 카메라 줌만 맞춰주기
-  useEffect(() => {
-    if (routePath && routePath.length > 0 && map && window.google) {
-      const bounds = new window.google.maps.LatLngBounds();
-      routePath.forEach((point) => bounds.extend(point)); // 배열의 점들을 전부 포함하게 범위 잡기
-      map.fitBounds(bounds);
-
-      setIsTracking(false);
-    }
-  }, [routePath, map]);
-
-  // 현재 위치 버튼 클릭 시: 내 위치로 이동 + 다시 추적 활성화
   const handleCurrentLocation = useCallback(() => {
     if (map) {
       map.panTo(currentPosition);
       map.setZoom(17);
-      setIsTracking(true); // 다시 나를 따라오게 설정
+      setIsTracking(true);
     }
   }, [map, currentPosition]);
 
-  // 상태에 따른 지도 높이 계산
+  // 바텀시트 높이에 따라 지도 크기 조절
   const getMapHeight = () => {
     switch (sheetState) {
       case "half":
-        return "55%"; // 바텀시트가 중간일 때: 화면의 55%만 차지
+        return "55%";
       case "collapsed":
-        return "100%"; // 바텀시트가 내려갔을 때: 화면 꽉 채움
+        return "100%";
       case "expanded":
-        return "55%"; // 바텀시트가 펼쳐졌을 때
+        return "55%";
       default:
         return "55%";
     }
@@ -162,22 +150,19 @@ export default function MyGoogleMap({
   return isLoaded ? (
     <motion.div
       className="w-full relative"
-      animate={{ height: getMapHeight() }} // 높이 변경 애니메이션
+      animate={{ height: getMapHeight() }}
     >
       <GoogleMap
         mapContainerStyle={containerStyle}
-        center={initialCenter} //  상태값을 중심으로 설정
+        center={initialCenter}
         zoom={17}
-        options={{
-          disableDefaultUI: true,
-        }}
+        options={{ disableDefaultUI: true }}
         onLoad={(map) => {
           setMap(map);
           map.panTo(currentPosition);
         }}
-        onDragStart={() => setIsTracking(false)} // 지도 직접 드래그하면 추적 해제
+        onDragStart={() => setIsTracking(false)}
       >
-        {/* 현재 내 위치에 마커 표시 */}
         <MarkerF
           position={currentPosition}
           zIndex={1}
@@ -201,57 +186,96 @@ export default function MyGoogleMap({
           }}
         />
 
-        {/* API로 받아온 수거함 마커들 렌더링 */}
-        {bins.map((bin) => {
-          const isSelected = selectedBinId === bin.id;
+        {!routeData ? (
+          bins.map((bin) => {
+            const isSelected = selectedBinId === bin.id;
+            const size = isSelected
+              ? new google.maps.Size(40, 53)
+              : new google.maps.Size(30, 40);
+            const anchor = isSelected
+              ? new google.maps.Point(20, 53)
+              : new google.maps.Point(15, 39);
 
-          // 크기 정의
-          const size = isSelected
-            ? new google.maps.Size(40, 53)
-            : new google.maps.Size(30, 40);
+            return (
+              <MarkerF
+                key={bin.id}
+                position={{ lat: bin.latitude, lng: bin.longitude }}
+                onClick={() => {
+                  setSelectedBinId(bin.id);
+                  setSheetState("half");
+                }}
+                icon={{
+                  url: isSelected
+                    ? "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 384 512'%3E%3Cpath fill='%233b82f6' d='M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z'/%3E%3C/svg%3E"
+                    : "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 384 512'%3E%3Cpath fill='%239ca3af' d='M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z'/%3E%3C/svg%3E",
+                  scaledSize: size,
+                  anchor: anchor,
+                }}
+              />
+            );
+          })
+        ) : (
+          <>
+            {/* 목적지 (파란색) */}
+            {bins
+              .filter((b) => b.id === routeData.destinationId)
+              .map((bin) => (
+                <MarkerF
+                  key={`dest-${bin.id}`}
+                  position={{ lat: bin.latitude, lng: bin.longitude }}
+                  zIndex={10}
+                  icon={{
+                    url: "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 384 512'%3E%3Cpath fill='%233b82f6' d='M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z'/%3E%3C/svg%3E",
+                    scaledSize: new google.maps.Size(40, 53),
+                    anchor: new google.maps.Point(20, 53),
+                  }}
+                />
+              ))}
 
-          // 앵커 정의 (크기에 맞춰 정확한 밑부분 중앙 계산)
-          const anchor = isSelected
-            ? new google.maps.Point(20, 53)
-            : new google.maps.Point(15, 39);
+            {/* 휴식 포인트 (초록색) */}
+            {routeData.restPoints?.map((p, i) => (
+              <MarkerF
+                key={`rest-${p.id || i}`}
+                position={{ lat: p.latitude, lng: p.longitude }}
+                icon={{
+                  url: "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 384 512'%3E%3Cpath fill='%2310b981' d='M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z'/%3E%3C/svg%3E",
+                  scaledSize: new google.maps.Size(30, 40),
+                  anchor: new google.maps.Point(15, 39),
+                }}
+              />
+            ))}
 
-          return (
-            <MarkerF
-              key={bin.id}
-              position={{ lat: bin.latitude, lng: bin.longitude }}
-              onClick={() => {
-                setSelectedBinId(bin.id);
-                setSheetState("half");
-              }}
-              // 선택된 마커는 파란색, 아니면 회색 핀으로 표시
-              icon={{
-                url: isSelected
-                  ? "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 384 512'%3E%3Cpath fill='%233b82f6' d='M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z'/%3E%3C/svg%3E"
-                  : "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 384 512'%3E%3Cpath fill='%239ca3af' d='M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z'/%3E%3C/svg%3E",
+            {/* 추천 마트 (주황색) */}
+            {routeData.martSuggestionsAlongRoute?.map((p, i) => (
+              <MarkerF
+                key={`mart-${p.poiKey || i}`}
+                position={{ lat: p.latitude, lng: p.longitude }}
+                icon={{
+                  url: "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 384 512'%3E%3Cpath fill='%23f97316' d='M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z'/%3E%3C/svg%3E",
+                  scaledSize: new google.maps.Size(30, 40),
+                  anchor: new google.maps.Point(15, 39),
+                }}
+              />
+            ))}
 
-                // 위에서 정의한 변수 사용
-                scaledSize: size,
-                anchor: anchor,
-              }}
-            />
-          );
-        })}
+            {/* 추천 공원 (초록색) */}
+            {routeData.parkSuggestionsAlongRoute?.map((p, i) => (
+              <MarkerF
+                key={`park-${p.poiKey || i}`}
+                position={{ lat: p.latitude, lng: p.longitude }}
+                icon={{
+                  url: "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 384 512'%3E%3Cpath fill='%2310b981' d='M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z'/%3E%3C/svg%3E",
+                  scaledSize: new google.maps.Size(30, 40),
+                  anchor: new google.maps.Point(15, 39),
+                }}
+              />
+            ))}
+          </>
+        )}
 
-        {/* 경로 선 그리기 */}
-        {/* {decodedPath.length > 0 && (
+        {decodedPath.length > 0 && (
           <PolylineF
             path={decodedPath}
-            options={{
-              strokeColor: "#3b82f6", // tailwind primary 색상 (파란색)
-              strokeOpacity: 0.8,
-              strokeWeight: 6, // 선 두께
-            }}
-          />
-        )} */}
-
-        {routePath && routePath.length > 0 && (
-          <PolylineF
-            path={routePath}
             options={{
               strokeColor: "#3b82f6",
               strokeOpacity: 0.8,

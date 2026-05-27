@@ -12,312 +12,171 @@ import LocationIcon from "../../assets/icons/location_fill.svg?react";
 import ConfirmModal from "../../components/ConfirmModal";
 import api from "../../api/axios";
 import ErrorModal from "../../components/ErrorModal";
+import type { RouteDataResponse, WalkContextType } from "./Walk";
 
-// 백엔드 영어 데이터를 한글로 변환
-const slopeMap: Record<string, string> = {
-  GENTLE: "완만함",
-  MODERATE: "적당함",
-  STEEP: "가파름",
-};
 const activityMap: Record<string, string> = {
   MODERATE: "적당한",
   ACTIVE: "활발한",
   MAXIMUM: "최대의",
 };
 
+interface PointItem {
+  id: string;
+  title: string;
+  desc: string;
+  lat?: number;
+  lng?: number;
+}
+
 const RoutePreview = () => {
   const { binId } = useParams();
   const navigate = useNavigate();
-
-  const { state } = useLocation(); // 앞 페이지에서 넘긴 데이터 받기
+  const { state } = useLocation();
 
   const {
     setSheetState,
     sheetState,
-    setRoutePath,
     setRoutePolyline,
+    setRouteData,
+    setFocusedLocation,
+    bins,
     myLocation,
     setSelectedBinId,
-  } = useOutletContext<any>();
+  } = useOutletContext<WalkContextType>();
+
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isErrorModalOpen, setIsErrorModalOpen] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const [windowHeight] = useState(window.innerHeight);
+  const [previewData, setPreviewData] = useState<RouteDataResponse | null>(
+    null,
+  );
+  const [combinedPoints, setCombinedPoints] = useState<PointItem[]>([]);
 
-  // AI 경로 결과 저장할 상태
-  const [routeData, setRouteData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // 프리뷰 화면이 열리면 목적지(binId)를 선택된 상태로 지정
   useEffect(() => {
-    if (binId) {
-      setSelectedBinId(Number(binId));
-    }
+    if (binId) setSelectedBinId(Number(binId));
   }, [binId, setSelectedBinId]);
 
-  // API 호출 - 화면 켜지고 위치 파악되면 실행
   useEffect(() => {
-    // 위치 정보가 없거나 state로 넘어온 값이 없으면 튕겨내기
-    if (!myLocation || !state) return;
+    if (state && state.routeData) {
+      const data: RouteDataResponse = state.routeData;
+      setPreviewData(data);
+      setRouteData(data);
 
-    const generateRoute = async () => {
-      try {
-        setIsLoading(true);
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+      if (data.routePolyline) setRoutePolyline(data.routePolyline);
 
-        /* // api 요청 body
-        const requestBody = {
-          userId: 1, // 현재 로그인한 유저 아이디 (임시 1)
-          currentLatitude: myLocation.lat,
-          currentLongitude: myLocation.lng,
-          destinationIds: [state.destinationId],
-          filter: state.filters,
-        };
+      const points: PointItem[] = [];
 
-        const res = await api.post("/routes/generate", requestBody);
-
-        console.log("AI 경로 생성 성공!", res.data);
-        setRouteData(res.data); // 성공한 데이터 저장 */
-
-        // 내 위치 -> 목적지로 가는 가짜 좌표 배열 만들기!
-        const mockPath = [
-          { lat: myLocation.lat, lng: myLocation.lng }, // 출발지 (내 위치)
-          { lat: 37.625294853394145, lng: 127.0781739504518 }, // 가짜 중간길 1
-          { lat: 37.6253017812431, lng: 127.07791624762802 }, // 가짜 중간길 2
-          { lat: 37.62475891276535, lng: 127.0779524964447 },
-          { lat: 37.624795140824325, lng: 127.07766648994472 },
-          { lat: 37.624756850774546, lng: 127.0776636345529 },
-          { lat: 37.62464004956438, lng: 127.07716508916506 },
-          { lat: 37.62424932620634, lng: 127.07529843747463 },
-          { lat: 37.623797078519246, lng: 127.0745135389438 },
-          { lat: 37.62403372851429, lng: 127.07429005262443 },
-          { lat: 37.624155491649596, lng: 127.07408344251196 },
-          { lat: 37.62409248123931, lng: 127.07398992618778 },
-          { lat: 37.62406101059809, lng: 127.07388794544731 },
-          { lat: 37.62475942903467, lng: 127.07364225637096 },
-          { lat: 37.624828, lng: 127.073786 }, // 도착지 (공릉1동 주민센터 좌표)
-        ];
-
-        // 임시 가짜 데이터 (Mock)
-        const mockResponse = {
-          id: 105,
-          userId: 1,
-          userDailyMissionId: 12,
-          destinationId: 3,
-          startLatitude: 37.629,
-          startLongitude: 127.075,
-          totalDistanceMeters: 618,
-          estimatedWalkTimeMinutes: 40,
-          estimatedSteps: 3500,
-          averageSlope: "GENTLE",
-          activityLevel: "MODERATE",
-          routePolyline: "_p~iF~ps|U_ulLnnqC_mqNvxq",
-          greenSpaceRatio: 0.8,
-          crosswalkCount: 3,
-          isPedestrianOnly: true,
-          isNatureFriendly: true,
-          hasRestPoints: true,
-          restPoints: [
-            {
-              id: 1001,
-              routeId: 105,
-              name: "해오라기 어린이공원",
-              type: "REST_BENCH",
-              latitude: 37.632,
-              longitude: 127.0765,
-              order: 1,
-              distanceFromPrevious: 800,
-              instruction: "해오라기 어린이공원 벤치에서 잠시 쉬어가세요.",
-            },
-            {
-              id: 1002,
-              routeId: 105,
-              name: "GS25 공릉타운점",
-              type: "PARK",
-              latitude: 37.6355,
-              longitude: 127.078,
-              order: 2,
-              distanceFromPrevious: 1200,
-              instruction: "당뇨 관리에 좋은 저당식품들을 구경해보세요.",
-            },
-            {
-              id: 1003,
-              routeId: 105,
-              name: "공릉1동 주민센터",
-              type: "DESTINATION",
-              latitude: 37.638,
-              longitude: 127.0795,
-              order: 3,
-              distanceFromPrevious: 500,
-              instruction: "목적지에 도착했습니다! 운동 완료!",
-            },
-            {
-              id: 1004,
-              routeId: 105,
-              name: "해오라기 어린이공원",
-              type: "REST_BENCH",
-              latitude: 37.632,
-              longitude: 127.0765,
-              order: 1,
-              distanceFromPrevious: 800,
-              instruction: "해오라기 어린이공원 벤치에서 잠시 쉬어가세요.",
-            },
-            {
-              id: 1005,
-              routeId: 105,
-              name: "GS25 공릉타운점",
-              type: "PARK",
-              latitude: 37.6355,
-              longitude: 127.078,
-              order: 2,
-              distanceFromPrevious: 1200,
-              instruction: "당뇨 관리에 좋은 저당식품들을 구경해보세요.",
-            },
-            {
-              id: 1006,
-              routeId: 105,
-              name: "공릉1동 주민센터",
-              type: "DESTINATION",
-              latitude: 37.638,
-              longitude: 127.0795,
-              order: 3,
-              distanceFromPrevious: 500,
-              instruction: "목적지에 도착했습니다! 운동 완료!",
-            },
-            {
-              id: 1007,
-              routeId: 105,
-              name: "해오라기 어린이공원",
-              type: "REST_BENCH",
-              latitude: 37.632,
-              longitude: 127.0765,
-              order: 1,
-              distanceFromPrevious: 800,
-              instruction: "해오라기 어린이공원 벤치에서 잠시 쉬어가세요.",
-            },
-            {
-              id: 1008,
-              routeId: 105,
-              name: "GS25 공릉타운점",
-              type: "PARK",
-              latitude: 37.6355,
-              longitude: 127.078,
-              order: 2,
-              distanceFromPrevious: 1200,
-              instruction: "당뇨 관리에 좋은 저당식품들을 구경해보세요.",
-            },
-            {
-              id: 1009,
-              routeId: 105,
-              name: "공릉1동 주민센터",
-              type: "DESTINATION",
-              latitude: 37.638,
-              longitude: 127.0795,
-              order: 3,
-              distanceFromPrevious: 500,
-              instruction: "목적지에 도착했습니다! 운동 완료!",
-            },
-          ],
-          generatedAt: "2026-02-20T20:00:00Z",
-          completedAt: null,
-          createdAt: "2026-02-20T20:00:00Z",
-          updatedAt: "2026-02-20T20:00:00Z",
-        };
-        setRouteData(mockResponse);
-        //setRoutePolyline(mockResponse.routePolyline); // 받아온 암호화된 경로 문자열을 지도 컴포넌트로 전달
-        setRoutePath(mockPath);
-      } catch (error) {
-        console.error("경로 생성 실패:", error);
-      } finally {
-        setIsLoading(false);
+      if (data.restPoints?.length > 0) {
+        points.push(
+          ...data.restPoints.map((p, index) => ({
+            id: `rest-${p.id || index}`,
+            title: p.name || "휴식 포인트",
+            desc: p.instruction || "근처 벤치에서 잠시 쉬어가세요.",
+            lat: p.latitude,
+            lng: p.longitude,
+          })),
+        );
       }
-    };
 
-    generateRoute();
-  }, [myLocation, state, setRoutePolyline, setRoutePath]);
+      if (data.martSuggestionsAlongRoute?.length > 0) {
+        points.push(
+          ...data.martSuggestionsAlongRoute.map((p, index) => ({
+            id: `mart-${p.poiKey || index}`,
+            title: p.name || "추천 마트",
+            desc: "산책 중 들러서 건강한 저당 식품을 구경해 보세요.",
+            lat: p.latitude,
+            lng: p.longitude,
+          })),
+        );
+      }
+
+      if (data.parkSuggestionsAlongRoute?.length > 0) {
+        points.push(
+          ...data.parkSuggestionsAlongRoute.map((p, index) => ({
+            id: `park-${p.poiKey || index}`,
+            title: p.name || "추천 공원",
+            desc: "공원을 가로지르며 상쾌하게 걸어보세요.",
+            lat: p.latitude,
+            lng: p.longitude,
+          })),
+        );
+      }
+
+      const destBin = bins.find((b) => b.id === data.destinationId);
+      if (data.destinationName) {
+        points.push({
+          id: "destination",
+          title: data.destinationName,
+          desc: "목적지에 도착했어요! 오늘도 메디워크와 함께 지구를 지키는 운동을 완료했어요.",
+          lat: destBin?.latitude,
+          lng: destBin?.longitude,
+        });
+      }
+
+      setCombinedPoints(points);
+    }
+
+    return () => {
+      setRouteData(null);
+      setRoutePolyline(null);
+      setFocusedLocation(null);
+    };
+  }, [state, setRoutePolyline, setRouteData, setFocusedLocation, bins]);
 
   const controls = useDragControls();
 
-  // 인증하기 버튼 클릭 시 실행될 함수
   const handleAuthenticate = async () => {
     try {
-      let finalReward = 0; // 얻은 리워드
+      let finalReward = 0;
       if (state.isMission) {
-        // 미션에서 넘어온 경우: 미션 완료 API 호출
         await api.post(`/user-daily-missions/${state.missionId}/complete`, {
-          earnedReward: state.earnedReward || 3000, // (임시) 원래는 이전 페이지에서 넘어온 보상 금액을 넣어야 함
-          currentLatitude: 37.618839703254395,
-          currentLongitude: 127.07549661397934,
+          earnedReward: state.earnedReward || 3000,
+          currentLatitude: myLocation?.lat,
+          currentLongitude: myLocation?.lng,
         });
         finalReward = state.earnedReward || 3000;
       } else {
-        // 일반 수거함에서 넘어온 경우: 이벤트 생성 API 호출
         await api.post("/events", {
-          userId: 1,
+          userId: previewData?.userId || 1,
           eventType: "MEDICINE_COLLECTION",
-          title: state.name,
+          title: "폐의약품 수거",
           rewardAmount: 100,
           eventDateTime: new Date().toISOString(),
-          collectionLocationId: state.destinationId,
-          routeId: routeData?.id,
-          currentLatitude: 37.624828,
-          currentLongitude: 127.073786,
-          //currentLatitude: myLocation?.lat,
-          //currentLongitude: myLocation?.lng,
+          collectionLocationId: state?.binId || previewData?.destinationId,
+          routeId: previewData?.id,
+          currentLatitude: myLocation?.lat,
+          currentLongitude: myLocation?.lng,
         });
-        finalReward = 100; // 일반 수거 보상 (임시 100)
+        finalReward = 100;
       }
-
-      // 완료 후 성공 화면으로 이동
       navigate("/complete", {
-        replace: true, // 뒤로가기 했을 때 이 프리뷰 페이지로 다시 못 오게 막음
+        replace: true,
         state: {
           reward: finalReward,
-          distance: routeData?.totalDistanceMeters || 0,
+          distance: previewData?.totalDistanceMeters || 0,
         },
       });
     } catch (error: any) {
-      console.error("인증 처리 실패:", error);
-      if (
-        error.response &&
-        error.response.data &&
-        error.response.data.message
-      ) {
-        const formattedMsg = error.response.data.message.replace(".", ".\n");
-        setErrorMessage(formattedMsg);
-      } else {
-        setErrorMessage("서버와 통신 중 문제가 발생했습니다.");
-      }
+      if (error.response?.data?.message)
+        setErrorMessage(error.response.data.message.replace(".", ".\n"));
+      else setErrorMessage("서버와 통신 중 문제가 발생했습니다.");
       setIsErrorModalOpen(true);
     }
   };
 
-  // 경로 생성 로딩 중일 때 보여줄 화면
-  if (isLoading) {
-    return (
-      <div className="absolute inset-0 flex items-center justify-center bg-white/90 backdrop-blur-sm z-50">
-        <p className="font-semibold text-lg text-primary animate-pulse">
-          AI가 최적의 경로를 디자인하고 있습니다...
-        </p>
-      </div>
-    );
-  }
+  const closeModal = () => setIsModalOpen(false);
+  const closeErrorModal = () => setIsErrorModalOpen(false);
+  const confirmModal = () => navigate(`/walk/${binId}`);
 
-  // 모달 제어 함수
-  const closeModal = () => {
-    setIsModalOpen(false);
+  const handlePointClick = (point: PointItem) => {
+    if (point.lat && point.lng) {
+      setFocusedLocation({ lat: point.lat, lng: point.lng });
+      setSheetState("half");
+    }
   };
 
-  const closeErrorModal = () => {
-    setIsErrorModalOpen(false);
-  };
-
-  const confirmModal = () => {
-    navigate(`/walk/${binId}`);
-  };
-
-  // 프리뷰 전용 위치 상수
   const TOP_Y = 110;
   const MIDDLE_Y = windowHeight * 0.52;
   const BOTTOM_Y = windowHeight - 140;
@@ -342,29 +201,32 @@ const RoutePreview = () => {
   return (
     <>
       <div className="relative h-dvh w-full pointer-events-none">
-        {/* 상단 목적지 플로팅 바  */}
         <div
           onClick={() => setIsModalOpen(!isModalOpen)}
-          className="fixed w-full max-w-md left-1/2 -translate-x-1/2 top-10 inset-x-0 px-5 z-50 pointer-events-auto"
+          className="fixed w-full max-w-md left-1/2 -translate-x-1/2 top-10 inset-x-0 px-5 z-50 pointer-events-auto cursor-pointer"
         >
           <div className="bg-white rounded-full pl-5 pr-4 py-3 flex items-center justify-between shadow-card">
             <div className="flex gap-3 items-center">
               <span className="text-primary text-sub3_sb_16">목적지</span>
-              <span className="text-body1_m_16">공릉1동 주민센터</span>
+              <span className="text-body1_m_16">
+                {previewData?.destinationName}
+              </span>
             </div>
-            <button onClick={() => setIsModalOpen(!isModalOpen)}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsModalOpen(!isModalOpen);
+              }}
+            >
               <CloseIcon className="w-6 h-6 text-[#6C727C]" />
             </button>
           </div>
         </div>
 
-        {/* 바텀시트 */}
         <motion.div
           animate={{ y: getTargetY() }}
           transition={{ type: "spring", damping: 25, stiffness: 200 }}
-          // 바텀시트 높이를 (화면 전체 - 상단 여백)으로 강제 설정
           style={{ height: windowHeight - TOP_Y }}
-          // style 높이를 따름
           className="fixed inset-x-0 top-0 bg-white w-full max-w-md mx-auto z-40 rounded-t-3xl shadow-xl flex flex-col pointer-events-auto overflow-hidden"
           drag="y"
           dragControls={controls}
@@ -372,7 +234,6 @@ const RoutePreview = () => {
           dragConstraints={{ top: TOP_Y, bottom: BOTTOM_Y }}
           onDragEnd={handleDragEnd}
         >
-          {/* 드래그 핸들 */}
           <div
             onPointerDown={(e) => controls.start(e)}
             className="flex justify-center py-3 cursor-grab active:cursor-grabbing touch-none"
@@ -380,9 +241,7 @@ const RoutePreview = () => {
             <div className="w-15 h-1 bg-[#C3C7CE] rounded-full" />
           </div>
 
-          {/* 내부 레이아웃 */}
           <div className="flex flex-col h-full px-5 overflow-hidden">
-            {/* 헤더 */}
             <div className="pb-5 flex-none">
               <div className="flex flex-col gap-2">
                 <h2 className="text-title1_sb_20 mb-2">
@@ -392,55 +251,58 @@ const RoutePreview = () => {
                 </h2>
                 <div className="flex gap-0.5 items-center">
                   <span className="text-primary text-caption1_m_13">
-                    총 {routeData?.totalDistanceMeters}m{" "}
+                    총 {previewData?.totalDistanceMeters || 0}m{" "}
                   </span>
                   <BulletIcon className="w-4 h-4 text-[#7A8396]" />
                   <span className="text-[#40444B] text-caption3_r_13">
-                    평균 경사도 {slopeMap[routeData?.averageSlope]}
-                  </span>
-                  <BulletIcon className="w-4 h-4 text-[#7A8396]" />
-                  <span className="text-[#40444B] text-caption3_r_13">
-                    {activityMap[routeData?.activityLevel]} 활동량
+                    {previewData?.activityLevel
+                      ? activityMap[previewData.activityLevel]
+                      : "보통"}{" "}
+                    활동량
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* 휴식 포인트 */}
             <div className="flex-1 overflow-y-auto min-h-0 no-scrollbar py-2 pb-20">
-              {/* map() 함수를 이용해서 배열 길이만큼 반복해서 그림 */}
-              {routeData?.restPoints?.map((point: any, index: number) => {
-                const isLast = index === routeData.restPoints.length - 1; // 마지막 목적지인지 확인
-                return (
-                  <div
-                    key={point.id}
-                    className="grid grid-cols-[auto_1fr] gap-x-3"
-                  >
-                    <div className="flex flex-col items-center">
-                      <div className="w-4 h-4 rounded-full border-2 border-[#97A2B8] bg-[#F3F7FF] z-10 shrink-0" />
-                      {/* 마지막 줄이면 점선을 안 그림 */}
-                      {!isLast && (
-                        <div className="w-0.5 h-full border-l border-dashed border-[#97A2B8]" />
-                      )}
-                    </div>
-                    <div className="pb-8 flex flex-col gap-1.5">
-                      <div className="flex items-center gap-1 text-[#6C727C] text-caption1_m_13">
-                        <span>
-                          <LocationIcon className="w-4 h-4 text-primary" />
-                        </span>
-                        {point.name}
+              {combinedPoints.length > 0 ? (
+                combinedPoints.map((point: PointItem, index: number) => {
+                  const isLast = index === combinedPoints.length - 1;
+                  return (
+                    <div
+                      key={point.id}
+                      className="grid grid-cols-[auto_1fr] gap-x-3 cursor-pointer"
+                      onClick={() => handlePointClick(point)}
+                    >
+                      <div className="flex flex-col items-center">
+                        <div className="w-4 h-4 rounded-full border-[1.4px] border-[#97A2B8] bg-[#F3F7FF] z-10 shrink-0" />
+                        {!isLast && (
+                          <div className="w-0.5 h-full border-l border-dashed border-[#97A2B8]" />
+                        )}
                       </div>
-                      <p className="text-body1_m_16 text-[#202123] ">
-                        {point.instruction}
-                      </p>
+                      <div className="pb-8 flex flex-col gap-1.5">
+                        <div className="flex items-center gap-1 text-[#6C727C] text-caption1_m_13">
+                          <LocationIcon className="w-4 h-4 text-primary" />
+                          {point.title}
+                        </div>
+                        <p className="text-body1_m_16 text-[#202123]">
+                          {point.desc}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              ) : (
+                <div className="text-center text-[#6C727C] text-caption1_m_13 py-10">
+                  선택하신 경로 주변에 안내할 특별한 포인트가 없습니다.
+                  <br />
+                  목적지를 향해 바로 출발해 보세요!
+                </div>
+              )}
             </div>
           </div>
         </motion.div>
-        {/* 인증하기 버튼 */}
+
         <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md px-5 pb-10 pt-7 z-50 pointer-events-auto bg-linear-to-t from-white from-70% to-transparent">
           <button
             onClick={handleAuthenticate}
@@ -450,6 +312,7 @@ const RoutePreview = () => {
           </button>
         </div>
       </div>
+
       {isModalOpen && (
         <ConfirmModal
           title="목적지를 재설정 하시겠습니까?"
