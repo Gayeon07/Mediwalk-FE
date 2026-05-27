@@ -5,6 +5,50 @@ import api from "../../api/axios";
 import { useCurrentLocation } from "../../hooks/useCurrentLocation";
 import Header from "../../components/Header";
 
+// 백엔드 응답 타입 정의
+export interface PointSuggestion {
+  poiKey: string;
+  name: string;
+  category: string;
+  latitude: number;
+  longitude: number;
+  approxAlongRouteMeters: number;
+  distanceToPolylineMeters: number;
+}
+
+export interface RestPoint {
+  id: number;
+  routeId: number;
+  name: string;
+  type: string;
+  latitude: number;
+  longitude: number;
+  order: number;
+  distanceFromPrevious: number;
+  instruction: string;
+}
+
+export interface RouteDataResponse {
+  id: number;
+  userId: number;
+  userDailyMissionId: number | null;
+  destinationId: number;
+  destinationName: string;
+  startLatitude: number;
+  startLongitude: number;
+  totalDistanceMeters: number;
+  estimatedWalkTimeMinutes: number;
+  estimatedSteps: number;
+  activityLevel: string;
+  routePolyline: string;
+  hasRestPoints: boolean;
+  notifyEcoMart: boolean;
+  notifyWalkingProgress: boolean;
+  restPoints: RestPoint[];
+  martSuggestionsAlongRoute: PointSuggestion[];
+  parkSuggestionsAlongRoute: PointSuggestion[];
+}
+
 export interface BinLocationData {
   id: number;
   name: string;
@@ -28,6 +72,11 @@ export interface WalkContextType {
   setSelectedBinId: React.Dispatch<React.SetStateAction<number | null>>;
   routePolyline: string | null;
   setRoutePolyline: React.Dispatch<React.SetStateAction<string | null>>;
+  routeData: RouteDataResponse | null;
+  setRouteData: React.Dispatch<React.SetStateAction<RouteDataResponse | null>>;
+  setFocusedLocation: React.Dispatch<
+    React.SetStateAction<{ lat: number; lng: number } | null>
+  >;
   myLocation: { lat: number; lng: number } | null;
 }
 
@@ -50,6 +99,13 @@ const Walk = () => {
   const { myLocation, isLocating } = useCurrentLocation();
 
   const [routePolyline, setRoutePolyline] = useState<string | null>(null);
+
+  // 프리뷰 마커를 위한 상태와, 특정 마커 포커싱을 위한 상태 추가
+  const [routeData, setRouteData] = useState<RouteDataResponse | null>(null);
+  const [focusedLocation, setFocusedLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
 
   useEffect(() => {
     if (isLocating || !myLocation) return;
@@ -95,7 +151,9 @@ const Walk = () => {
         selectedBinId={selectedBinId}
         setSelectedBinId={setSelectedBinId}
         setSheetState={setSheetState}
-        routePolyline={routePolyline} // 💡 지도 컴포넌트로 전달
+        routePolyline={routePolyline}
+        routeData={routeData} // 지도에 넘겨줌
+        focusedLocation={focusedLocation} // 지도에 넘겨줌
         myLocation={myLocation}
       />
 
@@ -108,7 +166,10 @@ const Walk = () => {
           selectedBinId,
           setSelectedBinId,
           routePolyline,
-          setRoutePolyline, // 💡 프리뷰 컴포넌트(자식)가 값을 세팅할 수 있게 전달
+          setRoutePolyline,
+          routeData,
+          setRouteData, // 💡 자식(RoutePreview)이 채울 수 있게 넘겨줌
+          setFocusedLocation, // 💡 클릭 시 포커스 이동을 위해 넘겨줌
           myLocation,
         }}
       />

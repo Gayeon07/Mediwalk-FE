@@ -12,6 +12,7 @@ import LocationIcon from "../../assets/icons/location_fill.svg?react";
 import ConfirmModal from "../../components/ConfirmModal";
 import api from "../../api/axios";
 import ErrorModal from "../../components/ErrorModal";
+import type { RouteDataResponse, WalkContextType } from "./Walk";
 
 const activityMap: Record<string, string> = {
   MODERATE: "적당한",
@@ -19,101 +20,116 @@ const activityMap: Record<string, string> = {
   MAXIMUM: "최대의",
 };
 
+interface PointItem {
+  id: string;
+  title: string;
+  desc: string;
+  lat?: number;
+  lng?: number;
+}
+
 const RoutePreview = () => {
   const { binId } = useParams();
   const navigate = useNavigate();
-
   const { state } = useLocation();
 
   const {
     setSheetState,
     sheetState,
     setRoutePolyline,
+    setRouteData,
+    setFocusedLocation,
+    bins,
     myLocation,
     setSelectedBinId,
-  } = useOutletContext<any>();
+  } = useOutletContext<WalkContextType>();
 
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isErrorModalOpen, setIsErrorModalOpen] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const [windowHeight] = useState(window.innerHeight);
-
-  const [routeData, setRouteData] = useState<any>(null);
-
-  const [combinedPoints, setCombinedPoints] = useState<any[]>([]);
+  const [previewData, setPreviewData] = useState<RouteDataResponse | null>(
+    null,
+  );
+  const [combinedPoints, setCombinedPoints] = useState<PointItem[]>([]);
 
   useEffect(() => {
-    if (binId) {
-      setSelectedBinId(Number(binId));
-    }
+    if (binId) setSelectedBinId(Number(binId));
   }, [binId, setSelectedBinId]);
 
   useEffect(() => {
     if (state && state.routeData) {
-      const data = state.routeData;
+      const data: RouteDataResponse = state.routeData;
+      setPreviewData(data);
       setRouteData(data);
 
-      if (data.routePolyline) {
-        setRoutePolyline(data.routePolyline);
-      }
+      if (data.routePolyline) setRoutePolyline(data.routePolyline);
 
-      const points = [];
+      const points: PointItem[] = [];
 
-      if (data.restPoints && data.restPoints.length > 0) {
+      if (data.restPoints?.length > 0) {
         points.push(
-          ...data.restPoints.map((p: any, index: number) => ({
+          ...data.restPoints.map((p, index) => ({
             id: `rest-${p.id || index}`,
             title: p.name || "휴식 포인트",
-            desc: "근처 벤치에서 잠시 쉬어가세요.",
+            desc: p.instruction || "근처 벤치에서 잠시 쉬어가세요.",
+            lat: p.latitude,
+            lng: p.longitude,
           })),
         );
       }
 
-      if (
-        data.martSuggestionsAlongRoute &&
-        data.martSuggestionsAlongRoute.length > 0
-      ) {
+      if (data.martSuggestionsAlongRoute?.length > 0) {
         points.push(
-          ...data.martSuggestionsAlongRoute.map((p: any, index: number) => ({
+          ...data.martSuggestionsAlongRoute.map((p, index) => ({
             id: `mart-${p.poiKey || index}`,
             title: p.name || "추천 마트",
             desc: "산책 중 들러서 건강한 저당 식품을 구경해 보세요.",
+            lat: p.latitude,
+            lng: p.longitude,
           })),
         );
       }
 
-      if (
-        data.parkSuggestionsAlongRoute &&
-        data.parkSuggestionsAlongRoute.length > 0
-      ) {
+      if (data.parkSuggestionsAlongRoute?.length > 0) {
         points.push(
-          ...data.parkSuggestionsAlongRoute.map((p: any, index: number) => ({
+          ...data.parkSuggestionsAlongRoute.map((p, index) => ({
             id: `park-${p.poiKey || index}`,
             title: p.name || "추천 공원",
             desc: "공원을 가로지르며 상쾌하게 걸어보세요.",
+            lat: p.latitude,
+            lng: p.longitude,
           })),
         );
       }
 
+      const destBin = bins.find((b) => b.id === data.destinationId);
       if (data.destinationName) {
         points.push({
           id: "destination",
           title: data.destinationName,
           desc: "목적지에 도착했어요! 오늘도 메디워크와 함께 지구를 지키는 운동을 완료했어요.",
+          lat: destBin?.latitude,
+          lng: destBin?.longitude,
         });
       }
 
       setCombinedPoints(points);
     }
-  }, [state, setRoutePolyline]);
+
+    return () => {
+      setRouteData(null);
+      setRoutePolyline(null);
+      setFocusedLocation(null);
+    };
+  }, [state, setRoutePolyline, setRouteData, setFocusedLocation, bins]);
 
   const controls = useDragControls();
 
   const handleAuthenticate = async () => {
     try {
       let finalReward = 0;
-
       if (state.isMission) {
         await api.post(`/user-daily-missions/${state.missionId}/complete`, {
           earnedReward: state.earnedReward || 3000,
@@ -123,38 +139,29 @@ const RoutePreview = () => {
         finalReward = state.earnedReward || 3000;
       } else {
         await api.post("/events", {
-          userId: routeData?.userId || 1,
+          userId: previewData?.userId || 1,
           eventType: "MEDICINE_COLLECTION",
           title: "폐의약품 수거",
           rewardAmount: 100,
           eventDateTime: new Date().toISOString(),
-          collectionLocationId: state?.binId || routeData?.destinationId,
-          routeId: routeData?.id,
+          collectionLocationId: state?.binId || previewData?.destinationId,
+          routeId: previewData?.id,
           currentLatitude: myLocation?.lat,
           currentLongitude: myLocation?.lng,
         });
         finalReward = 100;
       }
-
       navigate("/complete", {
-        replace: true, // 뒤로가기 했을 때 이 프리뷰 페이지로 다시 못 오게 막음
+        replace: true,
         state: {
           reward: finalReward,
-          distance: routeData?.totalDistanceMeters || 0,
+          distance: previewData?.totalDistanceMeters || 0,
         },
       });
     } catch (error: any) {
-      console.error("인증 처리 실패:", error);
-      if (
-        error.response &&
-        error.response.data &&
-        error.response.data.message
-      ) {
-        const formattedMsg = error.response.data.message.replace(".", ".\n");
-        setErrorMessage(formattedMsg);
-      } else {
-        setErrorMessage("서버와 통신 중 문제가 발생했습니다.");
-      }
+      if (error.response?.data?.message)
+        setErrorMessage(error.response.data.message.replace(".", ".\n"));
+      else setErrorMessage("서버와 통신 중 문제가 발생했습니다.");
       setIsErrorModalOpen(true);
     }
   };
@@ -162,6 +169,13 @@ const RoutePreview = () => {
   const closeModal = () => setIsModalOpen(false);
   const closeErrorModal = () => setIsErrorModalOpen(false);
   const confirmModal = () => navigate(`/walk/${binId}`);
+
+  const handlePointClick = (point: PointItem) => {
+    if (point.lat && point.lng) {
+      setFocusedLocation({ lat: point.lat, lng: point.lng });
+      setSheetState("half");
+    }
+  };
 
   const TOP_Y = 110;
   const MIDDLE_Y = windowHeight * 0.52;
@@ -195,7 +209,7 @@ const RoutePreview = () => {
             <div className="flex gap-3 items-center">
               <span className="text-primary text-sub3_sb_16">목적지</span>
               <span className="text-body1_m_16">
-                {routeData?.destinationName}
+                {previewData?.destinationName}
               </span>
             </div>
             <button
@@ -237,12 +251,12 @@ const RoutePreview = () => {
                 </h2>
                 <div className="flex gap-0.5 items-center">
                   <span className="text-primary text-caption1_m_13">
-                    총 {routeData?.totalDistanceMeters || 0}m{" "}
+                    총 {previewData?.totalDistanceMeters || 0}m{" "}
                   </span>
                   <BulletIcon className="w-4 h-4 text-[#7A8396]" />
                   <span className="text-[#40444B] text-caption3_r_13">
-                    {routeData?.activityLevel
-                      ? activityMap[routeData.activityLevel]
+                    {previewData?.activityLevel
+                      ? activityMap[previewData.activityLevel]
                       : "보통"}{" "}
                     활동량
                   </span>
@@ -252,12 +266,13 @@ const RoutePreview = () => {
 
             <div className="flex-1 overflow-y-auto min-h-0 no-scrollbar py-2 pb-20">
               {combinedPoints.length > 0 ? (
-                combinedPoints.map((point: any, index: number) => {
+                combinedPoints.map((point: PointItem, index: number) => {
                   const isLast = index === combinedPoints.length - 1;
                   return (
                     <div
                       key={point.id}
-                      className="grid grid-cols-[auto_1fr] gap-x-3"
+                      className="grid grid-cols-[auto_1fr] gap-x-3 cursor-pointer"
+                      onClick={() => handlePointClick(point)}
                     >
                       <div className="flex flex-col items-center">
                         <div className="w-4 h-4 rounded-full border-[1.4px] border-[#97A2B8] bg-[#F3F7FF] z-10 shrink-0" />
@@ -267,9 +282,7 @@ const RoutePreview = () => {
                       </div>
                       <div className="pb-8 flex flex-col gap-1.5">
                         <div className="flex items-center gap-1 text-[#6C727C] text-caption1_m_13">
-                          <span>
-                            <LocationIcon className="w-4 h-4 text-primary" />
-                          </span>
+                          <LocationIcon className="w-4 h-4 text-primary" />
                           {point.title}
                         </div>
                         <p className="text-body1_m_16 text-[#202123]">
@@ -289,7 +302,7 @@ const RoutePreview = () => {
             </div>
           </div>
         </motion.div>
-        {/* 인증하기 버튼 */}
+
         <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md px-5 pb-10 pt-7 z-50 pointer-events-auto bg-linear-to-t from-white from-70% to-transparent">
           <button
             onClick={handleAuthenticate}
