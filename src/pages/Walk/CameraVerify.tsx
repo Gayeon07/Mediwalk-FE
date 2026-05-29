@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import CloseIcon from "../../assets/icons/delete_line.svg?react";
 import api from "../../api/axios";
+import ErrorModal from "../../components/ErrorModal";
 
 // 2가지 모드: 폐의약품(사진), 투함(동영상)
 type CameraMode = "MEDICINE" | "DROP_BIN";
@@ -22,6 +23,14 @@ const CameraVerify = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const [isRecording, setIsRecording] = useState(false);
+
+  // 에러 모달 상태 관리
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [errorTitle, setErrorTitle] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+
+  // 에러 모달 닫기 핸들러
+  const closeErrorModal = () => setIsErrorModalOpen(false);
 
   // 카메라 켜기
   useEffect(() => {
@@ -159,108 +168,126 @@ const CameraVerify = () => {
         });
       } catch (error) {
         console.error("이벤트 생성 실패:", error);
-        alert("인증은 완료되었으나 리워드 적립 중 오류가 발생했습니다.");
+        setErrorTitle("리워드 적립 오류");
+        setErrorMessage("리워드 적립 중 오류가 발생했습니다.");
+        setIsErrorModalOpen(true);
         setIsProcessing(false);
       }
     } else {
       // 검증 실패 시 백엔드에서 전달한 message 띄움
-      alert(`인증 실패: ${message}\n다시 촬영해주세요.`);
+      setErrorTitle("인증 실패");
+      setErrorMessage(`폐의약품 인증에 실패했습니다.\n다시 촬영해주세요.`);
+      setIsErrorModalOpen(true);
       setIsProcessing(false);
     }
   };
 
   const handleApiError = (error: any) => {
     console.error("인증 통신 오류:", error);
-    alert("서버 오류가 발생했습니다. 다시 시도해주세요.");
+    setErrorTitle("서버 오류");
+    setErrorMessage(
+      "서버와 통신 중 문제가 발생했습니다.\n잠시 후 다시 시도해주세요.",
+    );
+    setIsErrorModalOpen(true);
     setIsProcessing(false);
   };
 
   return (
-    <div className="relative h-dvh w-full bg-black overflow-hidden flex flex-col">
-      {/* 닫기 버튼 */}
-      <button
-        onClick={() => navigate(-1)}
-        className="absolute top-12 left-5 z-50"
-      >
-        <CloseIcon className="w-6 h-6 text-white drop-shadow-md" />
-      </button>
-
-      {/* 뷰파인더 영역 */}
-      <div className="absolute inset-0 w-full h-full">
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className="w-full h-full object-cover pointer-events-none"
-        />
-      </div>
-
-      <canvas ref={canvasRef} className="hidden" />
-
-      {/* 하단 컨트롤 영역 */}
-      <div className="absolute bottom-0 pb-10 w-full flex flex-col items-center z-10">
-        {/* 셔터 버튼 */}
+    <>
+      <div className="relative h-dvh w-full bg-black overflow-hidden flex flex-col">
+        {/* 닫기 버튼 */}
         <button
-          onClick={
-            mode === "MEDICINE" ? handleCapturePhoto : handleToggleRecord
-          }
-          disabled={isProcessing}
-          className={`mb-4 flex items-center justify-center w-19 h-19 rounded-full border-2 border-white transition-all ${
-            isProcessing ? "opacity-50 cursor-not-allowed" : "active:scale-95"
-          }`}
+          onClick={() => navigate(-1)}
+          className="absolute top-12 left-5 z-50"
         >
-          {/* 모드에 따른 셔터 아이콘 변화 */}
-          <div
-            className={`transition-all duration-300 ${
-              mode === "MEDICINE"
-                ? "w-16 h-16 bg-white rounded-full" // 사진: 꽉 찬 하얀 원
-                : isRecording
-                  ? "w-8 h-8 bg-red-500 rounded-md" // 영상 녹화 중
-                  : "w-16 h-16 bg-red-500 rounded-full" // 영상 대기
-            }`}
-          />
+          <CloseIcon className="w-6 h-6 text-white drop-shadow-md" />
         </button>
 
-        {isProcessing && (
-          <p className="text-white mb-4 text-caption1_m_13 animate-pulse">
-            AI가 판독 중입니다...
-          </p>
-        )}
+        {/* 뷰파인더 영역 */}
+        <div className="absolute inset-0 w-full h-full">
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className="w-full h-full object-cover pointer-events-none"
+          />
+        </div>
 
-        {/* 클릭 시 텍스트가 가운데로 슬라이드 되는 메뉴 영역 */}
-        {!isRecording && (
-          <div className="relative w-full flex justify-center items-center overflow-hidden">
-            <motion.div
-              className="flex items-center gap-3"
-              animate={{ x: mode === "MEDICINE" ? 45 : -62 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            >
-              <button
-                onClick={() => !isProcessing && setMode("MEDICINE")}
-                className={`transition-all duration-300 whitespace-nowrap text-body1_m_16 ${
-                  mode === "MEDICINE"
-                    ? "bg-white text-black px-3.5 py-1.5 rounded-full"
-                    : "text-white px-3.5 py-1.5"
-                }`}
+        <canvas ref={canvasRef} className="hidden" />
+
+        {/* 하단 컨트롤 영역 */}
+        <div className="absolute bottom-0 pb-10 w-full flex flex-col items-center z-10">
+          {/* 셔터 버튼 */}
+          <button
+            onClick={
+              mode === "MEDICINE" ? handleCapturePhoto : handleToggleRecord
+            }
+            disabled={isProcessing}
+            className={`mb-4 flex items-center justify-center w-19 h-19 rounded-full border-2 border-white transition-all ${
+              isProcessing ? "opacity-50 cursor-not-allowed" : "active:scale-95"
+            }`}
+          >
+            {/* 모드에 따른 셔터 아이콘 변화 */}
+            <div
+              className={`transition-all duration-300 ${
+                mode === "MEDICINE"
+                  ? "w-16 h-16 bg-white rounded-full" // 사진: 꽉 찬 하얀 원
+                  : isRecording
+                    ? "w-8 h-8 bg-red-500 rounded-md" // 영상 녹화 중
+                    : "w-16 h-16 bg-red-500 rounded-full" // 영상 대기
+              }`}
+            />
+          </button>
+
+          {isProcessing && (
+            <p className="text-white mb-4 text-caption1_m_13 animate-pulse">
+              AI가 판독 중입니다...
+            </p>
+          )}
+
+          {/* 클릭 시 텍스트가 가운데로 슬라이드 되는 메뉴 영역 */}
+          {!isRecording && (
+            <div className="relative w-full flex justify-center items-center overflow-hidden">
+              <motion.div
+                className="flex items-center gap-3"
+                animate={{ x: mode === "MEDICINE" ? 45 : -62 }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
               >
-                폐의약품 인증
-              </button>
-              <button
-                onClick={() => !isProcessing && setMode("DROP_BIN")}
-                className={`transition-all duration-300 whitespace-nowrap text-body1_m_16 ${
-                  mode === "DROP_BIN"
-                    ? "bg-white text-black px-3.5 py-1.5 rounded-full"
-                    : "text-white px-3.5 py-1.5"
-                }`}
-              >
-                투함 인증
-              </button>
-            </motion.div>
-          </div>
-        )}
+                <button
+                  onClick={() => !isProcessing && setMode("MEDICINE")}
+                  className={`transition-all duration-300 whitespace-nowrap text-body1_m_16 ${
+                    mode === "MEDICINE"
+                      ? "bg-white text-black px-3.5 py-1.5 rounded-full"
+                      : "text-white px-3.5 py-1.5"
+                  }`}
+                >
+                  폐의약품 인증
+                </button>
+                <button
+                  onClick={() => !isProcessing && setMode("DROP_BIN")}
+                  className={`transition-all duration-300 whitespace-nowrap text-body1_m_16 ${
+                    mode === "DROP_BIN"
+                      ? "bg-white text-black px-3.5 py-1.5 rounded-full"
+                      : "text-white px-3.5 py-1.5"
+                  }`}
+                >
+                  투함 인증
+                </button>
+              </motion.div>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+
+      {isErrorModalOpen && (
+        <ErrorModal
+          title={errorTitle}
+          detail={errorMessage}
+          onClose={closeErrorModal}
+        />
+      )}
+    </>
   );
 };
 
