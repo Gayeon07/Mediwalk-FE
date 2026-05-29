@@ -164,7 +164,7 @@ const CameraVerify = () => {
       {/* 닫기 버튼 */}
       <button
         onClick={() => navigate(-1)}
-        className="absolute top-12 left-5 z-50 p-2"
+        className="absolute top-12 left-5 z-50"
       >
         <CloseIcon className="w-6 h-6 text-white drop-shadow-md" />
       </button>
