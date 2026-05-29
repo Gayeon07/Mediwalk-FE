@@ -130,7 +130,7 @@ const RoutePreview = () => {
   const handleAuthenticate = async () => {
     try {
       const proximityRes = await api.get(
-        `/user-daily-missions/${binId}/destination-proximity`,
+        `/collection-locations/${binId}/destination-proximity`,
         {
           params: {
             currentLatitude: myLocation?.lat,
@@ -141,7 +141,7 @@ const RoutePreview = () => {
 
       // 반경 20m 이내가 아닐 경우 에러모달
       if (!proximityRes.data.withinActivationRadius) {
-        setErrorMessage("목적지와 20m 이내로 접근한 후 다시 시도해주세요.");
+        setErrorMessage("목적지 20m 이내에서 다시 시도해주세요.");
         setIsErrorModalOpen(true);
         return;
       }
