@@ -130,7 +130,7 @@ const RoutePreview = () => {
   const handleAuthenticate = async () => {
     try {
       const proximityRes = await api.get(
-        `/user-daily-missions/${binId}/destination-proximity`,
+        `/collection-locations/${binId}/destination-proximity`,
         {
           params: {
             currentLatitude: myLocation?.lat,
@@ -141,7 +141,7 @@ const RoutePreview = () => {
 
       // 반경 20m 이내가 아닐 경우 에러모달
       if (!proximityRes.data.withinActivationRadius) {
-        setErrorMessage("목적지와 20m 이내로 접근한 후 다시 시도해주세요.");
+        setErrorMessage("목적지 20m 이내에서 다시 시도해주세요.");
         setIsErrorModalOpen(true);
         return;
       }
@@ -168,7 +168,15 @@ const RoutePreview = () => {
 
   const closeModal = () => setIsModalOpen(false);
   const closeErrorModal = () => setIsErrorModalOpen(false);
-  const confirmModal = () => navigate(`/walk/${binId}`);
+
+  // 미션 여부에 따라 재설정 시 돌아가는 경로 분기 처리
+  const confirmModal = () => {
+    if (state?.isMission) {
+      navigate("/home"); // 미션에서 넘어온 경우 홈 화면으로 이동
+    } else {
+      navigate(`/walk/${binId}`); // 일반 수거함에서 넘어온 경우 수거함 페이지로 이동
+    }
+  };
 
   const handlePointClick = (point: PointItem) => {
     if (point.lat && point.lng) {

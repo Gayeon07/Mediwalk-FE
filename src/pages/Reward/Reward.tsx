@@ -112,8 +112,8 @@ const Reward = () => {
 
               return {
                 id: item.id,
-                title: isAccumulation ? "폐의약품 수거" : "리워드 환급",
-                status: item.accumulationCompleted ? "적립 완료" : "",
+                title: item.eventTitle,
+                status: "적립 완료",
                 date: formattedDate,
                 // 적립일 땐 locationName 우선, 환급일 땐 은행+계좌번호
                 location: isAccumulation
@@ -211,7 +211,10 @@ const Reward = () => {
               rewardMainData.rewardIncreaseRateComparedToLastMonth > 0
                 ? "+"
                 : ""}
-              {rewardMainData?.rewardIncreaseRateComparedToLastMonth || 0}%
+              {Math.round(
+                rewardMainData?.rewardIncreaseRateComparedToLastMonth || 0,
+              )}
+              %
             </div>
           </div>
 
@@ -226,7 +229,7 @@ const Reward = () => {
               </div>
               <div className="flex items-center justify-between">
                 <div className="text-sub1_sb_18 text-common-black">
-                  {rewardMainData?.totalCollectionsCount || 0} 회
+                  {rewardMainData?.yearlyMedicineCollectionCount} 회
                 </div>
                 <ArrowRightIcon className="w-5 h-5 text-[#6C727C]" />
               </div>
