@@ -61,10 +61,10 @@ function Layout() {
               <Route path="preview/:binId" element={<RoutePreview />} />
             </Route>
             <Route path="/walk/filter/:binId" element={<RouteFilter />} />
+            <Route path="/camera" element={<CameraVerify />} />
             <Route path="/complete" element={<DisposalComplete />} />
 
             <Route path="/reward" element={<Reward />} />
-            <Route path="/camera" element={<CameraVerify />} />
             <Route
               path="/reward/monthlyReward"
               element={<MonthlyRewardHistory />}
