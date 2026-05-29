@@ -13,6 +13,7 @@ import MonthlyRewardHistory from "./pages/Reward/MonthlyRewardHistory";
 import TotalCollectionHistory from "./pages/Reward/TotalCollectionHistory";
 import Login from "./pages/Login/Login";
 import Splash from "./pages/Login/Splash";
+import CameraVerify from "./pages/Walk/CameraVerify";
 //import ProtectedRoute from "./components/ProtectedRoute";
 
 function Layout() {
@@ -28,6 +29,7 @@ function Layout() {
     "/complete",
     "/reward/monthlyReward",
     "/reward/totalCollection",
+    "/camera",
   ];
   const hideNavBar = hideNavBarPaths.some((path) => {
     if (path === "/") {
@@ -62,6 +64,7 @@ function Layout() {
             <Route path="/complete" element={<DisposalComplete />} />
 
             <Route path="/reward" element={<Reward />} />
+            <Route path="/camera" element={<CameraVerify />} />
             <Route
               path="/reward/monthlyReward"
               element={<MonthlyRewardHistory />}
