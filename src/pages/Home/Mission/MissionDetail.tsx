@@ -9,6 +9,7 @@ import api from "../../../api/axios";
 import useUserStore from "../../../store/useUserStore";
 import { useCurrentLocation } from "../../../hooks/useCurrentLocation";
 import RouteLoading from "../../Walk/components/RouteLoading";
+import { formatDistance } from "../../../utils/formatDistance";
 
 const MissionDetail = () => {
   const { missionId } = useParams();
@@ -22,12 +23,19 @@ const MissionDetail = () => {
 
   // API 호출 - 화면이 켜지면 실행
   useEffect(() => {
+    if (!myLocation || !userId) return;
+    if (mission) return;
     const fetchData = async () => {
       try {
         setLoading(true);
 
         // 미션 정보 가져오기
-        const missionRes = await api.get(`/user-daily-missions/${missionId}`);
+        const missionRes = await api.get(`/user-daily-missions/${missionId}`, {
+          params: {
+            currentLatitude: myLocation.lat,
+            currentLongitude: myLocation.lng,
+          },
+        });
         console.log(missionRes);
         setMission(missionRes.data);
       } catch (error) {
@@ -38,7 +46,7 @@ const MissionDetail = () => {
     };
 
     fetchData();
-  }, []);
+  }, [myLocation, userId, missionId]);
 
   // 미션 시작 버튼 클릭 함수
   const handleStartMission = async () => {
@@ -126,10 +134,10 @@ const MissionDetail = () => {
               </div>
               <div className="flex items-center gap-1 justify-end text-body1_m_16">
                 <span className=" text-common-black">
-                  {mission?.distanceMeters || "0"}m
+                  {formatDistance(mission?.distanceMeters)}
                 </span>
                 <span className="text-cool-neutral-60">
-                  도보 약 {mission?.walkingDistanceMeters || "0"}분
+                  도보 약 {mission?.estimatedWalkTimeMinutes || "0"}분
                 </span>
               </div>
             </div>
