@@ -9,6 +9,7 @@ import api from "../../../api/axios";
 import useUserStore from "../../../store/useUserStore";
 import { useCurrentLocation } from "../../../hooks/useCurrentLocation";
 import RouteLoading from "../../Walk/components/RouteLoading";
+import { formatDistance } from "../../../utils/formatDistance";
 
 const MissionDetail = () => {
   const { missionId } = useParams();
@@ -133,7 +134,7 @@ const MissionDetail = () => {
               </div>
               <div className="flex items-center gap-1 justify-end text-body1_m_16">
                 <span className=" text-common-black">
-                  {mission?.distanceMeters || "0"}m
+                  {formatDistance(mission?.distanceMeters)}
                 </span>
                 <span className="text-cool-neutral-60">
                   도보 약 {mission?.estimatedWalkTimeMinutes || "0"}분
