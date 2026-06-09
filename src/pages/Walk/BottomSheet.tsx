@@ -124,7 +124,11 @@ export default function BottomSheet() {
                     </p>
                   </div>
                   <button
-                    onClick={() => navigate("/walk/filter")}
+                    onClick={() =>
+                      navigate("/walk/filter", {
+                        state: { destinationIds: bins.map((bin) => bin.id) },
+                      })
+                    }
                     className="w-full py-3 mt-1 text-sub4_sb_14 bg-primary text-white rounded-lg flex justify-center items-center gap-1.5"
                   >
                     <ShineIcon className="text-white w-4 h-4" />

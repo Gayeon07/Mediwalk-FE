@@ -1,4 +1,4 @@
-import { useNavigate, useOutletContext, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useState } from "react";
 import ArrowIcon from "../../assets/icons/arrow1_left.svg?react";
 import ToggleButton from "../../components/ToggleButton";
@@ -9,15 +9,15 @@ import useUserStore from "../../store/useUserStore";
 import { useCurrentLocation } from "../../hooks/useCurrentLocation";
 import api from "../../api/axios";
 import RouteLoading from "./components/RouteLoading";
-import type { WalkContextType } from "./Walk";
 
 const RouteFilter = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { binId } = useParams();
   const { id: userId } = useUserStore();
   const { myLocation } = useCurrentLocation();
 
-  const { bins } = useOutletContext<WalkContextType>();
+  const destinationIds: number[] = location.state?.destinationIds || [];
 
   // 현재 스텝 관리 (1 또는 2)
   const [step, setStep] = useState<1 | 2>(1);
@@ -47,15 +47,13 @@ const RouteFilter = () => {
       return;
     }
 
-    if (!bins || bins.length === 0) {
+    if (!destinationIds || destinationIds.length === 0) {
       alert("주변 3km 이내에 이용 가능한 수거함이 없습니다.");
       return;
     }
 
     try {
       setIsGenerating(true); // 로딩 시작
-
-      const destinationIds = bins.map((bin) => bin.id);
 
       // 백엔드 요청 바디 생성
       const requestBody = {
