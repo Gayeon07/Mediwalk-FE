@@ -5,7 +5,6 @@ import type { BinLocationData } from "../Walk";
 import { formatDistance } from "../../../utils/formatDistance";
 import ShineIcon from "../../../assets/icons/ai_fill.svg?react";
 import useUserStore from "../../../store/useUserStore";
-import { useCurrentLocation } from "../../../hooks/useCurrentLocation";
 import api from "../../../api/axios";
 import RouteLoading from "./RouteLoading";
 
@@ -13,12 +12,17 @@ interface BinCardProps {
   info: BinLocationData;
   isSelected: boolean;
   onClick: () => void;
+  myLocation: { lat: number; lng: number };
 }
 
-export default function BinCard({ info, isSelected, onClick }: BinCardProps) {
+export default function BinCard({
+  info,
+  isSelected,
+  onClick,
+  myLocation,
+}: BinCardProps) {
   const navigate = useNavigate();
   const { id: userId } = useUserStore();
-  const { myLocation } = useCurrentLocation();
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleDirectGenerate = async (e: React.MouseEvent) => {
