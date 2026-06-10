@@ -28,7 +28,7 @@ export default function BinCard({ info, isSelected }: BinCardProps) {
         </span>
         <BulletIcon className="text-[#7A8396] w-4 h-4" />
         <span className="text-caption3_r_13 text-[#6C727C]">
-          도보 {info.walkingDistanceMeters}분
+          도보 {info.estimatedWalkTimeMinutes}분
         </span>
         <BulletIcon className="text-[#7A8396] w-4 h-4" />
         <span className="text-caption3_r_13 text-[#6C727C]">

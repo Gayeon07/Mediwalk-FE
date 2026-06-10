@@ -58,6 +58,7 @@ export interface BinLocationData {
   longitude: number;
   distanceMeters: number;
   walkingDistanceMeters: number;
+  estimatedWalkTimeMinutes: number;
   estimatedSteps: number;
 }
 
