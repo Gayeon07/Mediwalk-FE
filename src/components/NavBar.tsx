@@ -17,7 +17,7 @@ const NavBar = () => {
     <nav className="w-full h-21 flex bg-background-common z-50 px-10 pt-3 pb-5 justify-between ">
       <Link
         to="/home"
-        className={`flex flex-col items-center justify-center w-12 gap-1 ${getLink("/")}`}
+        className={`flex flex-col items-center justify-center w-12 gap-1 ${getLink("/home")}`}
       >
         <span>
           <HomeIcon className="w-7 h-7" />
